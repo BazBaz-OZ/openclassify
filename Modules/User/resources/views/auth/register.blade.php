@@ -1,149 +1,51 @@
 @extends('user::layouts.auth')
 
-@section('title', 'Create account')
+@section('title', __('site::messages.register'))
+@section('auth_title', __('user::messages.create_account'))
+@section('auth_lead', __('user::messages.register_lead'))
 
-@section('content')
-<div class="user-auth-copy">
-    <p class="user-auth-kicker">Account</p>
-    <h1 class="user-auth-title">Create account</h1>
-</div>
-
-<form method="POST" action="{{ route('register') }}" class="user-auth-form">
+@section('auth_body')
+<form method="POST" action="{{ route('register') }}" class="stack">
     @csrf
 
-    @if(filled($redirectTo))
-    <input type="hidden" name="redirect" value="{{ $redirectTo }}">
-    @endif
-
-    <div class="user-auth-grid">
-        <div class="user-auth-field">
-            <label for="first_name" class="user-auth-label">First name</label>
-            <input
-                id="first_name"
-                name="first_name"
-                type="text"
-                value="{{ old('first_name') }}"
-                class="user-auth-input"
-                autocomplete="given-name"
-                required
-                autofocus
-                placeholder="First name"
-            >
-            @error('first_name')
-            <p class="user-auth-error">{{ $message }}</p>
-            @enderror
-        </div>
-
-        <div class="user-auth-field">
-            <label for="last_name" class="user-auth-label">Last name</label>
-            <input
-                id="last_name"
-                name="last_name"
-                type="text"
-                value="{{ old('last_name') }}"
-                class="user-auth-input"
-                autocomplete="family-name"
-                required
-                placeholder="Last name"
-            >
-            @error('last_name')
-            <p class="user-auth-error">{{ $message }}</p>
-            @enderror
-        </div>
+    <div class="field">
+        <label class="field__label" for="name">{{ __('user::messages.name') }}</label>
+        <input id="name" type="text" name="name" value="{{ old('name') }}" class="input" required autofocus autocomplete="name"
+               aria-invalid="{{ $errors->has('name') ? 'true' : 'false' }}">
+        @error('name')<p class="field__error">{{ $message }}</p>@enderror
     </div>
 
-    <div class="user-auth-field">
-        <label for="email" class="user-auth-label">Email address</label>
-        <input
-            id="email"
-            name="email"
-            type="email"
-            value="{{ old('email') }}"
-            class="user-auth-input"
-            autocomplete="username"
-            required
-            placeholder="Enter your email"
-        >
-        @error('email')
-        <p class="user-auth-error">{{ $message }}</p>
-        @enderror
+    <div class="field">
+        <label class="field__label" for="email">{{ __('user::messages.email') }}</label>
+        <input id="email" type="email" name="email" value="{{ old('email') }}" class="input" required autocomplete="username"
+               aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}">
+        @error('email')<p class="field__error">{{ $message }}</p>@enderror
     </div>
 
-    <div class="user-auth-field" x-data="{ show: false }">
-        <label for="password" class="user-auth-label">Password</label>
-        <div class="user-auth-input-wrap">
-            <input
-                id="password"
-                name="password"
-                type="password"
-                x-bind:type="show ? 'text' : 'password'"
-                class="user-auth-input has-trailing"
-                autocomplete="new-password"
-                required
-                placeholder="Create a password"
-            >
-            <button type="button" class="user-auth-toggle" x-on:click="show = !show" x-bind:aria-label="show ? 'Hide password' : 'Show password'">
-                <svg x-show="!show" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/>
-                    <circle cx="12" cy="12" r="3" stroke-width="1.8"/>
-                </svg>
-                <svg x-show="show" x-cloak viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m3 3 18 18M10.6 10.6A3 3 0 0 0 14.8 14.8M9.9 5.1A10.4 10.4 0 0 1 12 4.9c6 0 9.5 6 9.5 6a17.6 17.6 0 0 1-2.8 3.5M6.2 6.3C3.8 8 2.5 10.1 2.5 10.1s3.5 6 9.5 6c1.6 0 3.1-.3 4.4-.8"/>
-                </svg>
-            </button>
-        </div>
-        @error('password')
-        <p class="user-auth-error">{{ $message }}</p>
-        @enderror
+    <div class="field">
+        <label class="field__label" for="phone">{{ __('user::messages.phone') }}</label>
+        <input id="phone" type="tel" name="phone" value="{{ old('phone') }}" class="input" autocomplete="tel">
+        @error('phone')<p class="field__error">{{ $message }}</p>@enderror
     </div>
 
-    <div class="user-auth-field" x-data="{ show: false }">
-        <label for="password_confirmation" class="user-auth-label">Confirm password</label>
-        <div class="user-auth-input-wrap">
-            <input
-                id="password_confirmation"
-                name="password_confirmation"
-                type="password"
-                x-bind:type="show ? 'text' : 'password'"
-                class="user-auth-input has-trailing"
-                autocomplete="new-password"
-                required
-                placeholder="Repeat your password"
-            >
-            <button type="button" class="user-auth-toggle" x-on:click="show = !show" x-bind:aria-label="show ? 'Hide password' : 'Show password'">
-                <svg x-show="!show" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/>
-                    <circle cx="12" cy="12" r="3" stroke-width="1.8"/>
-                </svg>
-                <svg x-show="show" x-cloak viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m3 3 18 18M10.6 10.6A3 3 0 0 0 14.8 14.8M9.9 5.1A10.4 10.4 0 0 1 12 4.9c6 0 9.5 6 9.5 6a17.6 17.6 0 0 1-2.8 3.5M6.2 6.3C3.8 8 2.5 10.1 2.5 10.1s3.5 6 9.5 6c1.6 0 3.1-.3 4.4-.8"/>
-                </svg>
-            </button>
-        </div>
-        @error('password_confirmation')
-        <p class="user-auth-error">{{ $message }}</p>
-        @enderror
+    <div class="field">
+        <label class="field__label" for="password">{{ __('user::messages.password') }}</label>
+        <input id="password" type="password" name="password" class="input" required autocomplete="new-password"
+               aria-invalid="{{ $errors->has('password') ? 'true' : 'false' }}">
+        @error('password')<p class="field__error">{{ $message }}</p>@enderror
     </div>
 
-    <div class="user-auth-checkbox-list">
-        <label class="user-auth-checkbox">
-            <input type="checkbox" name="terms" value="1" @checked(old('terms')) required>
-            <span>Accept terms</span>
-        </label>
-        @error('terms')
-        <p class="user-auth-error">{{ $message }}</p>
-        @enderror
+    <div class="field">
+        <label class="field__label" for="password_confirmation">{{ __('user::messages.confirm_password') }}</label>
+        <input id="password_confirmation" type="password" name="password_confirmation" class="input" required autocomplete="new-password">
     </div>
 
-    <button type="submit" class="user-auth-primary">
-        Create account
-    </button>
+    <button type="submit" class="button button--primary button--block button--large">{{ __('site::messages.register') }}</button>
+
+    @include('user::auth.partials.social-buttons')
 </form>
+@endsection
 
-<p class="user-auth-switch">
-    Already have an account?
-    <a href="{{ route('login', array_filter(['redirect' => $redirectTo])) }}" class="user-auth-link">Sign in</a>
-</p>
-
-@include('user::auth.partials.social-buttons', ['socialProviders' => $socialProviders])
+@section('auth_footer')
+{{ __('user::messages.have_account') }} <a href="{{ route('login') }}" class="text-link">{{ __('site::messages.login') }}</a>
 @endsection

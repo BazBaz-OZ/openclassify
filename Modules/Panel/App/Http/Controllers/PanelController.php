@@ -11,16 +11,34 @@ use Illuminate\View\View;
 use Modules\Listing\Models\Listing;
 use Modules\Listing\Support\ListingCustomFieldSchemaBuilder;
 use Modules\Listing\Support\ListingPanelHelper;
+use Modules\Notification\Models\UserNotification;
+use Modules\Offer\Models\Offer;
 use Modules\Panel\App\Http\Requests\StoreVideoRequest;
 use Modules\Panel\App\Http\Requests\UpdateListingRequest;
 use Modules\Panel\App\Http\Requests\UpdateVideoRequest;
+use Modules\Review\Models\Review;
 use Modules\Video\Models\Video;
 
 class PanelController extends Controller
 {
-    public function index(): RedirectResponse
+    public function index(Request $request): View
     {
-        return redirect()->route('panel.listings.index');
+        $userId = (int) $request->user()->getKey();
+
+        return view('panel::dashboard', [
+            'stats' => [
+                'active' => Listing::query()->ownedByUser($userId)->active()->count(),
+                'views' => (int) Listing::query()->ownedByUser($userId)->sum('view_count'),
+                'offers' => Offer::pendingCountForSeller($userId),
+                'reviews' => Review::summaryForSeller($userId),
+            ],
+            'recentListings' => Listing::query()
+                ->ownedByUser($userId)
+                ->latest('id')
+                ->limit(5)
+                ->get(),
+            'notifications' => UserNotification::latestForUser($userId),
+        ]);
     }
 
     public function create(): View

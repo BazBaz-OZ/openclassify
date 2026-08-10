@@ -10,5 +10,11 @@
     "Video": true,
     "Demo": true,
     "Panel": true,
-    "Site": true
+    "Site": true,
+    "Review": true,
+    "Report": true,
+    "Notification": true,
+    "Promotion": true,
+    "Offer": true,
+    "Page": true
 }

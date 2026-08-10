@@ -1,43 +1,21 @@
 @extends('user::layouts.auth')
 
-@section('title', 'Reset password')
+@section('title', __('user::messages.forgot_password'))
+@section('auth_title', __('user::messages.forgot_password'))
+@section('auth_lead', __('user::messages.forgot_lead'))
 
-@section('content')
-<div class="user-auth-copy">
-    <p class="user-auth-kicker">Password</p>
-    <h1 class="user-auth-title">Reset password</h1>
-    <p class="user-auth-subtitle">Enter your email and we will send a secure reset link.</p>
-</div>
-
-@if (session('status'))
-<div class="user-auth-status is-success">{{ session('status') }}</div>
-@endif
-
-<form method="POST" action="{{ route('password.email') }}" class="user-auth-form">
+@section('auth_body')
+<form method="POST" action="{{ route('password.email') }}" class="stack">
     @csrf
-
-    <div class="user-auth-field">
-        <label for="email" class="user-auth-label">Email address</label>
-        <input
-            id="email"
-            name="email"
-            type="email"
-            value="{{ old('email') }}"
-            class="user-auth-input"
-            required
-            autofocus
-            placeholder="Enter your email"
-        >
-        @error('email')
-        <p class="user-auth-error">{{ $message }}</p>
-        @enderror
+    <div class="field">
+        <label class="field__label" for="email">{{ __('user::messages.email') }}</label>
+        <input id="email" type="email" name="email" value="{{ old('email') }}" class="input" required autofocus>
+        @error('email')<p class="field__error">{{ $message }}</p>@enderror
     </div>
-
-    <button type="submit" class="user-auth-primary">Send reset link</button>
+    <button type="submit" class="button button--primary button--block button--large">{{ __('user::messages.send_reset_link') }}</button>
 </form>
+@endsection
 
-<p class="user-auth-switch">
-    Remembered your password?
-    <a href="{{ route('login') }}" class="user-auth-link">Back to sign in</a>
-</p>
+@section('auth_footer')
+<a href="{{ route('login') }}" class="text-link">{{ __('site::messages.back') }}</a>
 @endsection

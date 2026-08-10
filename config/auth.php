@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Modules\User\App\Models\User;
 
 return [
@@ -28,5 +30,4 @@ return [
         ],
     ],
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
-
 ];

@@ -12,6 +12,9 @@ use Modules\Favorite\App\Models\FavoriteSearch;
 use Modules\Listing\Models\Listing;
 use Modules\Listing\Support\ListingCustomFieldSchemaBuilder;
 use Modules\Location\Models\Country;
+use Modules\Offer\Models\Offer;
+use Modules\Report\Models\Report;
+use Modules\Review\Models\Review;
 use Modules\Theme\Support\ThemeManager;
 
 class ListingController extends Controller
@@ -180,8 +183,19 @@ class ListingController extends Controller
             }
         }
 
+        $sellerId = $listing->getAttribute('user_id') === null ? null : (int) $listing->getAttribute('user_id');
+        $sellerReviewSummary = $sellerId === null
+            ? ['total' => 0, 'average' => 0.0]
+            : Review::summaryForSeller($sellerId);
+        $bestOffer = Offer::highestPendingForListing((int) $listing->getKey());
+        $reportReasons = Report::reasons();
+
         return view($this->themes->view('listing', 'show'), compact(
             'listing',
+            'sellerId',
+            'sellerReviewSummary',
+            'bestOffer',
+            'reportReasons',
             'isListingFavorited',
             'isSellerFavorited',
             'presentableCustomFields',

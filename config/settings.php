@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Modules\Site\App\Settings\GeneralSettings;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelSettings\SettingsCasts\DataCast;
@@ -9,7 +11,6 @@ use Spatie\LaravelSettings\SettingsRepositories\DatabaseSettingsRepository;
 use Spatie\LaravelSettings\SettingsRepositories\RedisSettingsRepository;
 
 return [
-
     'settings' => [
         GeneralSettings::class,
     ],

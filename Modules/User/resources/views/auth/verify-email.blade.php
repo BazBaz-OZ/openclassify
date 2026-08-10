@@ -1,27 +1,23 @@
 @extends('user::layouts.auth')
 
-@section('title', 'Verify email')
+@section('title', __('user::messages.verify_email'))
+@section('auth_title', __('user::messages.verify_email'))
+@section('auth_lead', __('user::messages.verify_lead'))
 
-@section('content')
-<div class="user-auth-copy">
-    <p class="user-auth-kicker">Verification</p>
-    <h1 class="user-auth-title">Verify your email</h1>
-    <p class="user-auth-subtitle">Before you continue, confirm your email address from the link we sent you.</p>
-</div>
+@section('auth_body')
+<div class="stack">
+    @if(session('status') === 'verification-link-sent')
+        <div class="alert alert--positive"><x-ui.icon name="check"/><span>{{ __('user::messages.verification_sent') }}</span></div>
+    @endif
 
-@if (session('status') === 'verification-link-sent')
-<div class="user-auth-status is-success">A fresh verification link has been sent to your inbox.</div>
-@endif
-
-<div class="user-auth-actions-stack">
     <form method="POST" action="{{ route('verification.send') }}">
         @csrf
-        <button type="submit" class="user-auth-primary">Resend verification email</button>
+        <button type="submit" class="button button--primary button--block">{{ __('user::messages.resend_verification') }}</button>
     </form>
 
     <form method="POST" action="{{ route('logout') }}">
         @csrf
-        <button type="submit" class="user-auth-secondary">Log out</button>
+        <button type="submit" class="button button--ghost button--block">{{ __('site::messages.logout') }}</button>
     </form>
 </div>
 @endsection

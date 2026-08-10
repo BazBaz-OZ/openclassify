@@ -1,8 +1,7 @@
-@extends('app::layouts.app')
+@extends('site::layouts.app')
 
-@section('title', 'New Listing')
-
-@section('simple_page', '1')
+@section('title', __('panel::messages.new_listing'))
+@section('chromeless', '0')
 
 @section('content')
 <livewire:panel-quick-listing-form />

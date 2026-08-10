@@ -6,9 +6,12 @@ namespace Modules\Demo\App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DemoInstance extends Model
 {
+    use SoftDeletes;
+
     protected $connection = 'pgsql_public';
 
     protected $fillable = [

@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'default' => env('FILESYSTEM_DISK', 'public'),
     'disks' => [
-
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
@@ -22,10 +23,8 @@ return [
             'throw' => false,
             'report' => false,
         ],
-
     ],
     'links' => [
         public_path('storage') => storage_path('app/public'),
     ],
-
 ];

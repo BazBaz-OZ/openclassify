@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'default' => env('MAIL_MAILER', 'log'),
     'mailers' => [
-
         'smtp' => [
             'transport' => 'smtp',
             'scheme' => env('MAIL_SCHEME'),
@@ -59,11 +60,9 @@ return [
             ],
             'retry_after' => 60,
         ],
-
     ],
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
-
 ];

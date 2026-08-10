@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Support\Str;
 use Pdo\Mysql;
 
 return [
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => env('DB_CONNECTION', 'pgsql'),
     'connections' => [
-
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),
@@ -64,8 +65,8 @@ return [
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
+            'database' => env('DB_DATABASE', 'openclassify'),
+            'username' => env('DB_USERNAME', 'postgres'),
             'password' => env('DB_PASSWORD', ''),
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
@@ -79,8 +80,8 @@ return [
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
+            'database' => env('DB_DATABASE', 'openclassify'),
+            'username' => env('DB_USERNAME', 'postgres'),
             'password' => env('DB_PASSWORD', ''),
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
@@ -101,14 +102,12 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
         ],
-
     ],
     'migrations' => [
         'table' => 'migrations',
         'update_date_on_publish' => true,
     ],
     'redis' => [
-
         'client' => env('REDIS_CLIENT', 'phpredis'),
 
         'options' => [
@@ -142,7 +141,5 @@ return [
             'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
             'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
         ],
-
     ],
-
 ];

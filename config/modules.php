@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Nwidart\Modules\Activators\FileActivator;
 use Nwidart\Modules\Providers\ConsoleServiceProvider;
 
@@ -92,7 +94,6 @@ return [
     'auto-discover' => [
         'migrations' => true,
         'translations' => false,
-
     ],
     'commands' => ConsoleServiceProvider::defaultCommands()
         ->merge([

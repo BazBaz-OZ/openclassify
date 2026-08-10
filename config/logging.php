@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -12,7 +14,6 @@ return [
         'trace' => env('LOG_DEPRECATIONS_TRACE', false),
     ],
     'channels' => [
-
         'stack' => [
             'driver' => 'stack',
             'channels' => explode(',', (string) env('LOG_STACK', 'single')),
@@ -87,7 +88,5 @@ return [
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
-
     ],
-
 ];

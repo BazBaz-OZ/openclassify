@@ -26,6 +26,12 @@ use Modules\Category\CategoryPlugin;
 use Modules\Demo\App\Http\Middleware\ResolveDemoRequest;
 use Modules\Listing\ListingPlugin;
 use Modules\Location\LocationPlugin;
+use Modules\Notification\NotificationPlugin;
+use Modules\Offer\OfferPlugin;
+use Modules\Page\PagePlugin;
+use Modules\Promotion\PromotionPlugin;
+use Modules\Report\ReportPlugin;
+use Modules\Review\ReviewPlugin;
 use Modules\Site\App\Http\Middleware\BootstrapAppData;
 use Modules\Site\SitePlugin;
 use Modules\User\UserPlugin;
@@ -75,6 +81,12 @@ class AdminPanelProvider extends PanelProvider
                 SitePlugin::make(),
                 UserPlugin::make(),
                 VideoPlugin::make(),
+                ReviewPlugin::make(),
+                ReportPlugin::make(),
+                NotificationPlugin::make(),
+                PromotionPlugin::make(),
+                OfferPlugin::make(),
+                PagePlugin::make(),
             ])
             ->pages([Dashboard::class])
             ->middleware([

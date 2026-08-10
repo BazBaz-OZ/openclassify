@@ -17,6 +17,7 @@ return new class extends Migration
             $table->timestamp('prepared_at');
             $table->timestamp('expires_at')->index();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

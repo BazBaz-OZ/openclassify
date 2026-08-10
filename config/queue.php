@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'default' => env('QUEUE_CONNECTION', 'database'),
     'connections' => [
-
         'sync' => [
             'driver' => 'sync',
         ],
@@ -61,7 +62,6 @@ return [
                 'deferred',
             ],
         ],
-
     ],
     'batching' => [
         'database' => env('DB_BATCHING_CONNECTION', env('DEMO', false) ? 'pgsql_public' : env('DB_CONNECTION', 'sqlite')),
@@ -72,5 +72,4 @@ return [
         'database' => env('DB_FAILED_CONNECTION', env('DEMO', false) ? 'pgsql_public' : env('DB_CONNECTION', 'sqlite')),
         'table' => 'failed_jobs',
     ],
-
 ];

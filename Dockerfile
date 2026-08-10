@@ -15,8 +15,9 @@ RUN apk add --no-cache \
     libxml2-dev \
     icu-dev \
     libzip-dev \
+    postgresql-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd opcache intl zip
+    && docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd opcache intl zip
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

@@ -6,9 +6,8 @@ use Illuminate\Support\Facades\Route;
 use Modules\Conversation\App\Http\Controllers\ConversationController;
 
 Route::middleware('web')->group(function () {
-    Route::prefix('panel')->name('panel.')->group(function () {
+    Route::middleware('auth')->prefix('panel')->name('panel.')->group(function () {
         Route::get('/inbox', [ConversationController::class, 'inbox'])->name('inbox.index');
-        Route::middleware('auth')->get('/inbox/state', [ConversationController::class, 'state'])->name('inbox.state');
     });
 
     Route::middleware('auth')->name('conversations.')->group(function () {

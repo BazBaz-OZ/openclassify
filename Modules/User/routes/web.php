@@ -12,8 +12,13 @@ use Modules\User\App\Http\Controllers\Auth\RegisterController;
 use Modules\User\App\Http\Controllers\Auth\ResetPasswordController;
 use Modules\User\App\Http\Controllers\Auth\SocialAuthController;
 use Modules\User\App\Http\Controllers\ProfileController;
+use Modules\User\App\Http\Controllers\SellerController;
 
 Route::middleware('web')->group(function () {
+    Route::get('/sellers/{seller}', [SellerController::class, 'show'])
+        ->whereNumber('seller')
+        ->name('sellers.show');
+
     Route::middleware('guest')->group(function () {
         Route::get('/register', [RegisterController::class, 'create'])->name('register');
         Route::post('/register', [RegisterController::class, 'store']);

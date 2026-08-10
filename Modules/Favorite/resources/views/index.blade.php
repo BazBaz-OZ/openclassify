@@ -1,231 +1,122 @@
-@extends('app::layouts.app')
+@extends('site::layouts.app')
 
-@section('title', 'Favorites')
+@section('title', __('favorite::messages.favorites'))
+
+@php
+    $tabs = [
+        'listings' => __('favorite::messages.saved_listings'),
+        'searches' => __('favorite::messages.saved_searches'),
+        'sellers' => __('favorite::messages.followed_sellers'),
+    ];
+@endphp
 
 @section('content')
-<div class="max-w-[1320px] mx-auto px-4 py-8">
-    <div class="grid grid-cols-1 lg:grid-cols-[220px,1fr] gap-4">
-        @include('panel::partials.sidebar', ['activeMenu' => 'favorites', 'activeFavoritesTab' => $activeTab])
+<div class="shell shell--wide page">
+    <div class="stack stack--loose">
+        <header class="stack stack--tight">
+            <h1 class="title-page">{{ __('favorite::messages.favorites') }}</h1>
+        </header>
 
-        <section class="bg-white border border-slate-200">
-            @if($requiresLogin ?? false)
-            <div class="border-b border-slate-200 px-5 py-4 bg-slate-50 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <h1 class="text-xl font-semibold text-slate-900">Favorites</h1>
-                    <p class="text-sm text-slate-500 mt-1">Stay on this page and log in when you want to sync saved listings, searches, and sellers.</p>
-                </div>
-                <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
-                    Log in
-                </a>
-            </div>
-            @endif
+        @if($requiresLogin)
+            <x-ui.empty-state icon="heart" :title="__('favorite::messages.no_favorites')" :text="__('favorite::messages.no_favorites_hint')">
+                <a href="{{ route('login') }}" class="button button--primary">{{ __('site::messages.login') }}</a>
+            </x-ui.empty-state>
+        @else
+            <nav class="chip-row">
+                @foreach($tabs as $key => $label)
+                    <a href="{{ route('favorites.index', ['tab' => $key]) }}" class="pill {{ $activeTab === $key ? 'is-active' : '' }}">{{ $label }}</a>
+                @endforeach
+            </nav>
 
             @if($activeTab === 'listings')
-            @php
-                $listingTabQuery = array_filter([
-                    'tab' => 'listings',
-                    'status' => $statusFilter,
-                    'category' => $selectedCategoryId,
-                ], fn ($value) => !is_null($value) && $value !== '');
-            @endphp
-            <div class="border-b-2 border-slate-900 px-4 py-3 flex flex-wrap items-center gap-3">
-                <h1 class="text-3xl font-bold text-slate-800 mr-auto">Saved Listings</h1>
-                <div class="inline-flex border border-slate-300 overflow-hidden">
-                    <a href="{{ route('favorites.index', array_merge($listingTabQuery, ['status' => 'all'])) }}" class="px-5 py-2 text-sm font-semibold {{ $statusFilter === 'all' ? 'bg-slate-700 text-white' : 'bg-white text-slate-700 hover:bg-slate-100' }}">
-                        All
-                    </a>
-                    <a href="{{ route('favorites.index', array_merge($listingTabQuery, ['status' => 'active'])) }}" class="px-5 py-2 text-sm font-semibold border-l border-slate-300 {{ $statusFilter === 'active' ? 'bg-slate-700 text-white' : 'bg-white text-slate-700 hover:bg-slate-100' }}">
-                        Live
-                    </a>
-                </div>
-                <form method="GET" action="{{ route('favorites.index') }}" class="flex items-center gap-2">
+                <form method="GET" action="{{ route('favorites.index') }}" class="row row--wrap" data-filter-form>
                     <input type="hidden" name="tab" value="listings">
-                    <input type="hidden" name="status" value="{{ $statusFilter }}">
-                    <select name="category" class="h-10 min-w-44 border border-slate-300 px-3 text-sm text-slate-700">
-                        <option value="">Category</option>
-                        @foreach($categories as $category)
-                        <option value="{{ $category->id }}" @selected((int) $selectedCategoryId === (int) $category->id)>{{ $category->name }}</option>
+                    <label class="visually-hidden" for="fav-status">{{ __('panel::messages.status') }}</label>
+                    <select id="fav-status" name="status" class="select" style="max-width:190px" data-filter-auto>
+                        <option value="all" @selected($statusFilter === 'all')>{{ __('site::messages.all') }}</option>
+                        <option value="active" @selected($statusFilter === 'active')>{{ __('panel::messages.active') }}</option>
+                    </select>
+
+                    <label class="visually-hidden" for="fav-category">{{ __('site::messages.category') }}</label>
+                    <select id="fav-category" name="category" class="select" style="max-width:230px" data-filter-auto>
+                        <option value="">{{ __('site::messages.all_categories') }}</option>
+                        @foreach($categories as $id => $name)
+                            <option value="{{ $id }}" @selected($selectedCategoryId === (int) $id)>{{ $name }}</option>
                         @endforeach
                     </select>
-                    <button type="submit" class="h-10 px-4 bg-slate-700 text-white text-sm font-semibold hover:bg-slate-800">Filter</button>
                 </form>
-            </div>
 
-            <div class="w-full overflow-x-auto">
-                <table class="w-full min-w-[860px]">
-                    <thead>
-                        <tr class="bg-slate-50 text-slate-700 text-sm">
-                            <th class="text-left px-4 py-3 w-[58%]">Listing</th>
-                            <th class="text-left px-4 py-3 w-[16%]">Price</th>
-                            <th class="text-left px-4 py-3 w-[14%]">Messaging</th>
-                            <th class="text-right px-4 py-3 w-[12%]"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($favoriteListings as $listing)
-                        @php
-                            $listingImage = $listing->primaryImageData('card');
-                            $priceLabel = $listing->price ? number_format((float) $listing->price, 0).' '.$listing->currency : 'Free';
-                            $meta = collect([
-                                $listing->category?->name,
-                                $listing->city,
-                                $listing->country,
-                            ])->filter()->join(' › ');
-                            $conversationId = $buyerConversationListingMap[$listing->id] ?? null;
-                            $isOwnListing = (int) $listing->user_id === (int) auth()->id();
-                            $canMessageListing = !is_null($listing->user_id) && ! $isOwnListing;
-                        @endphp
-                        <tr class="border-t border-slate-200">
-                            <td class="px-4 py-4">
-                                <div class="flex gap-3">
-                                    <a href="{{ route('listings.show', $listing) }}" class="w-36 h-24 shrink-0 bg-slate-100 border border-slate-200 overflow-hidden">
-                                        @if($listingImage)
-                                        @include('listing::partials.responsive-image', [
-                                            'image' => $listingImage,
-                                            'alt' => $listing->title,
-                                            'class' => 'w-full h-full object-cover',
-                                        ])
-                                        @else
-                                        <div class="w-full h-full grid place-items-center text-slate-400">No image</div>
-                                        @endif
-                                    </a>
-                                    <div>
-                                        <a href="{{ route('listings.show', $listing) }}" class="font-semibold text-2xl text-slate-800 hover:text-slate-900 leading-6">
-                                            {{ $listing->title }}
+                @if($favoriteListings->isNotEmpty())
+                    <div class="grid grid--listings">
+                        @foreach($favoriteListings as $listing)
+                            <x-ui.listing-card :listing="$listing" :favorited="true"/>
+                        @endforeach
+                    </div>
+                    {{ $favoriteListings->links('components.pagination') }}
+                @else
+                    <x-ui.empty-state icon="heart" :title="__('favorite::messages.no_favorites')" :text="__('favorite::messages.no_favorites_hint')">
+                        <a href="{{ route('listings.index') }}" class="button button--secondary">{{ __('site::messages.browse') }}</a>
+                    </x-ui.empty-state>
+                @endif
+            @elseif($activeTab === 'searches')
+                @if($favoriteSearches->isNotEmpty())
+                    <div class="card">
+                        <div class="data-list">
+                            @foreach($favoriteSearches as $search)
+                                <div class="data-row" style="grid-template-columns: minmax(0,1fr) auto">
+                                    <div class="data-row__main">
+                                        <p class="data-row__title">{{ $search->getAttribute('term') ?: __('site::messages.all_listings') }}</p>
+                                        <p class="data-row__meta">
+                                            <time datetime="{{ $search->getAttribute('created_at')?->toIso8601String() }}">
+                                                {{ $search->getAttribute('created_at')?->diffForHumans() }}
+                                            </time>
+                                        </p>
+                                    </div>
+                                    <div class="data-row__actions">
+                                        <a href="{{ route('listings.index', array_filter(['search' => $search->getAttribute('term'), 'category' => $search->getAttribute('category_id')])) }}" class="button button--secondary button--small">
+                                            {{ __('favorite::messages.run_search') }}
                                         </a>
-                                        <p class="text-sm text-slate-500 mt-2">{{ $meta !== '' ? $meta : 'No category or location data' }}</p>
-                                        <p class="text-xs text-slate-400 mt-1">Saved on: {{ $listing->pivot->created_at?->format('M j, Y') }}</p>
+                                        <form method="POST" action="{{ route('favorites.searches.destroy', $search) }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="button button--ghost button--small">{{ __('favorite::messages.remove') }}</button>
+                                        </form>
                                     </div>
                                 </div>
-                            </td>
-                            <td class="px-4 py-4 text-2xl font-bold text-slate-700 whitespace-nowrap">{{ $priceLabel }}</td>
-                            <td class="px-4 py-4">
-                                @if($canMessageListing)
-                                    @if($conversationId)
-                                    <a href="{{ route('panel.inbox.index', ['conversation' => $conversationId]) }}" class="inline-flex items-center h-10 px-4 border border-slate-300 text-slate-700 text-sm font-semibold rounded-full hover:bg-slate-50">
-                                        Open chat
-                                    </a>
-                                    @else
-                                    <form method="POST" action="{{ route('conversations.start', $listing) }}">
-                                        @csrf
-                                        <button type="submit" class="inline-flex items-center h-10 px-4 bg-slate-900 text-white text-sm font-semibold rounded-full hover:bg-slate-700">
-                                            Send message
+                            @endforeach
+                        </div>
+                    </div>
+                    {{ $favoriteSearches->links('components.pagination') }}
+                @else
+                    <x-ui.empty-state icon="search" :title="__('favorite::messages.no_favorites')" :text="__('favorite::messages.no_favorites_hint')"/>
+                @endif
+            @else
+                @if($favoriteSellers->isNotEmpty())
+                    <div class="card">
+                        <div class="data-list">
+                            @foreach($favoriteSellers as $seller)
+                                <div class="data-row" style="grid-template-columns: auto minmax(0,1fr) auto">
+                                    <span class="avatar">{{ \App\Support\UserDirectory::initials((string) $seller->getAttribute('name')) }}</span>
+                                    <div class="data-row__main">
+                                        <p class="data-row__title">{{ $seller->getAttribute('name') }}</p>
+                                        <p class="data-row__meta">{{ __('user::messages.seller_since', ['date' => $seller->getAttribute('created_at')?->isoFormat('LL')]) }}</p>
+                                    </div>
+                                    <div class="data-row__actions">
+                                        <a href="{{ route('sellers.show', $seller) }}" class="button button--secondary button--small">{{ __('site::messages.view_profile') }}</a>
+                                        <button type="button" class="button button--ghost button--small" data-favorite-toggle="{{ route('favorites.sellers.toggle', $seller) }}">
+                                            {{ __('favorite::messages.remove') }}
                                         </button>
-                                    </form>
-                                    @endif
-                                @else
-                                <span class="text-xs text-slate-400">{{ $isOwnListing ? 'Your own listing' : 'Seller unavailable' }}</span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-4 text-right">
-                                <form method="POST" action="{{ route('favorites.listings.toggle', $listing) }}">
-                                    @csrf
-                                    <button type="submit" class="text-sm font-semibold text-slate-600 hover:text-slate-900">Remove</button>
-                                </form>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr class="border-t border-slate-200">
-                            <td colspan="4" class="px-4 py-10 text-center text-slate-500">
-                                No saved listings yet.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="px-4 py-4 border-t border-slate-200 text-sm text-slate-500">
-                * Listings saved within the last year are shown here.
-            </div>
-
-            @if($favoriteListings?->hasPages())
-            <div class="px-4 pb-4">{{ $favoriteListings->links() }}</div>
-            @endif
-            @endif
-
-            @if($activeTab === 'searches')
-            <div class="px-4 py-4 border-b border-slate-200">
-                <h1 class="text-3xl font-bold text-slate-800">Saved Searches</h1>
-                <p class="text-sm text-slate-500 mt-1">Return to your saved searches with one click.</p>
-            </div>
-            <div class="divide-y divide-slate-200">
-                @forelse($favoriteSearches as $favoriteSearch)
-                @php
-                    $searchUrl = route('listings.index', array_filter([
-                        'search' => $favoriteSearch->search_term,
-                        'category' => $favoriteSearch->category_id,
-                    ]));
-                @endphp
-                <article class="px-4 py-4 flex flex-col md:flex-row md:items-center gap-3">
-                    <div class="flex-1">
-                        <h2 class="font-semibold text-slate-800">{{ $favoriteSearch->label ?: 'Saved search' }}</h2>
-                        <p class="text-sm text-slate-500 mt-1">
-                            @if($favoriteSearch->search_term) Search: "{{ $favoriteSearch->search_term }}" · @endif
-                            @if($favoriteSearch->category) Category: {{ $favoriteSearch->category->name }} · @endif
-                            Saved: {{ $favoriteSearch->created_at?->format('M j, Y H:i') }}
-                        </p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <a href="{{ $searchUrl }}" class="inline-flex items-center h-10 px-4 bg-slate-900 text-white text-sm font-semibold rounded-full hover:bg-slate-700">
-                            Open search
-                        </a>
-                        <form method="POST" action="{{ route('favorites.searches.destroy', $favoriteSearch) }}">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="inline-flex items-center h-10 px-4 border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                                Delete
-                            </button>
-                        </form>
-                    </div>
-                </article>
-                @empty
-                <div class="px-4 py-10 text-center text-slate-500">
-                    No saved searches yet.
-                </div>
-                @endforelse
-            </div>
-            @if($favoriteSearches?->hasPages())
-            <div class="px-4 py-4 border-t border-slate-200">{{ $favoriteSearches->links() }}</div>
-            @endif
-            @endif
-
-            @if($activeTab === 'sellers')
-            <div class="px-4 py-4 border-b border-slate-200">
-                <h1 class="text-3xl font-bold text-slate-800">Saved Sellers</h1>
-                <p class="text-sm text-slate-500 mt-1">Manage the sellers you want to follow here.</p>
-            </div>
-            <div class="divide-y divide-slate-200">
-                @forelse($favoriteSellers as $seller)
-                <article class="px-4 py-4 flex flex-col md:flex-row md:items-center gap-3">
-                    <a href="{{ route('listings.index', ['user' => $seller->id]) }}" class="flex items-center gap-3 flex-1 hover:opacity-90">
-                        <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-900 font-bold grid place-items-center">
-                            {{ strtoupper(substr((string) $seller->name, 0, 1)) }}
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
-                        <div>
-                            <h2 class="font-semibold text-slate-800">{{ $seller->name }}</h2>
-                            <p class="text-sm text-slate-500">{{ $seller->email }}</p>
-                            <p class="text-xs text-slate-400 mt-1">Active listings: {{ (int) $seller->active_listings_count }}</p>
-                        </div>
-                    </a>
-                    <form method="POST" action="{{ route('favorites.sellers.toggle', $seller) }}">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center h-10 px-4 border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                            Remove seller
-                        </button>
-                    </form>
-                </article>
-                @empty
-                <div class="px-4 py-10 text-center text-slate-500">
-                    No saved sellers yet.
-                </div>
-                @endforelse
-            </div>
-            @if($favoriteSellers?->hasPages())
-            <div class="px-4 py-4 border-t border-slate-200">{{ $favoriteSellers->links() }}</div>
+                    </div>
+                    {{ $favoriteSellers->links('components.pagination') }}
+                @else
+                    <x-ui.empty-state icon="users" :title="__('favorite::messages.no_favorites')" :text="__('favorite::messages.no_favorites_hint')"/>
+                @endif
             @endif
-            @endif
-        </section>
+        @endif
     </div>
 </div>
 @endsection

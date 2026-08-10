@@ -1,46 +1,17 @@
 @extends('user::layouts.auth')
 
-@section('title', 'Confirm password')
+@section('title', __('user::messages.confirm_password'))
+@section('auth_title', __('user::messages.confirm_password'))
+@section('auth_lead', __('user::messages.confirm_lead'))
 
-@section('content')
-<div class="user-auth-copy">
-    <p class="user-auth-kicker">Security</p>
-    <h1 class="user-auth-title">Confirm password</h1>
-    <p class="user-auth-subtitle">This is a secure area. Enter your password once to continue.</p>
-</div>
-
-<form method="POST" action="{{ route('password.confirm') }}" class="user-auth-form">
+@section('auth_body')
+<form method="POST" action="{{ route('password.confirm') }}" class="stack">
     @csrf
-
-    <div class="user-auth-field" x-data="{ show: false }">
-        <label for="password" class="user-auth-label">Password</label>
-        <div class="user-auth-input-wrap">
-            <input
-                id="password"
-                name="password"
-                type="password"
-                x-bind:type="show ? 'text' : 'password'"
-                class="user-auth-input has-trailing"
-                required
-                autocomplete="current-password"
-                autofocus
-                placeholder="Enter your password"
-            >
-            <button type="button" class="user-auth-toggle" x-on:click="show = !show" x-bind:aria-label="show ? 'Hide password' : 'Show password'">
-                <svg x-show="!show" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/>
-                    <circle cx="12" cy="12" r="3" stroke-width="1.8"/>
-                </svg>
-                <svg x-show="show" x-cloak viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m3 3 18 18M10.6 10.6A3 3 0 0 0 14.8 14.8M9.9 5.1A10.4 10.4 0 0 1 12 4.9c6 0 9.5 6 9.5 6a17.6 17.6 0 0 1-2.8 3.5M6.2 6.3C3.8 8 2.5 10.1 2.5 10.1s3.5 6 9.5 6c1.6 0 3.1-.3 4.4-.8"/>
-                </svg>
-            </button>
-        </div>
-        @error('password')
-        <p class="user-auth-error">{{ $message }}</p>
-        @enderror
+    <div class="field">
+        <label class="field__label" for="password">{{ __('user::messages.password') }}</label>
+        <input id="password" type="password" name="password" class="input" required autofocus autocomplete="current-password">
+        @error('password')<p class="field__error">{{ $message }}</p>@enderror
     </div>
-
-    <button type="submit" class="user-auth-primary">Confirm password</button>
+    <button type="submit" class="button button--primary button--block button--large">{{ __('user::messages.confirm') }}</button>
 </form>
 @endsection

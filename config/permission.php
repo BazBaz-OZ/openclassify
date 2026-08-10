@@ -1,15 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 use Spatie\Permission\DefaultTeamResolver;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 return [
-
     'models' => [
         'permission' => Permission::class,
         'role' => Role::class,
-
     ],
 
     'table_names' => [
@@ -21,8 +21,8 @@ return [
     ],
 
     'column_names' => [
-        'role_pivot_key' => null, // default 'role_id',
-        'permission_pivot_key' => null, // default 'permission_id',
+        'role_pivot_key' => null,
+        'permission_pivot_key' => null,
         'model_morph_key' => 'model_id',
         'team_foreign_key' => 'team_id',
     ],

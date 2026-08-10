@@ -13,6 +13,7 @@ class FavoriteServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(module_path('Favorite', 'Database/migrations'));
         $this->loadRoutesFrom(module_path('Favorite', 'routes/web.php'));
         $this->loadViewsFrom(module_path('Favorite', 'resources/views'), 'favorite');
+        $this->loadTranslationsFrom(module_path('Favorite', 'lang'), 'favorite');
     }
 
     public function register(): void {}

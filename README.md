@@ -6,17 +6,53 @@ OpenClassify is a modular classifieds marketplace built with Laravel 13 and Fila
 
 ## Core Stack
 
-- PHP 8.5
+- PHP 8.4+
 - Laravel 13
+- PostgreSQL 16+
 - FilamentPHP v5
 - `nwidart/laravel-modules`
-- Blade + Tailwind + Vite
+- Blade + hand-authored CSS design system + Vite
+- TypeScript (strict) for all browser behaviour
 - Spatie Permission
 - Laravel Reverb + Echo (realtime chat)
 
-## Modules
+## Architecture
 
-All business features live in `Modules/*` (routes, services, models, resources, views, seeders).
+Modular monolith. Every business capability lives in `Modules/*` with its own routes,
+models, migrations, seeders, translations and views. Modules never JOIN across each
+other's tables; cross-module reads go through the composition-root helpers in
+`app/Support/*Directory.php`.
+
+Conventions enforced across the codebase:
+
+- `declare(strict_types=1);` in every PHP file
+- No comments — names and types carry the meaning
+- SoftDeletes on every domain table
+- Fat models own all database access; controllers stay thin
+- English identifiers, with per-module `lang/{locale}/messages.php` translations
+
+### Modules
+
+| Module | Responsibility |
+|--------|----------------|
+| `Site` | Layout, home, settings, locale switching |
+| `Listing` | Listings, custom fields, browse and detail |
+| `Category` | Category tree |
+| `Location` | Countries, cities, districts |
+| `User` | Auth, profiles, public seller storefronts |
+| `Panel` | Subscriber dashboard and listing wizard |
+| `Conversation` | Buyer/seller inbox with realtime messages |
+| `Favorite` | Saved listings, sellers and searches |
+| `Offer` | Price offers and negotiation |
+| `Review` | Seller ratings and reviews |
+| `Report` | Abuse reports and moderation queue |
+| `Notification` | In-app notification feed |
+| `Promotion` | Featured/urgent promotion plans and orders |
+| `Page` | CMS pages, sitemap.xml, robots.txt |
+| `Video` | Listing video upload and transcoding |
+| `Admin` | Filament admin panel wiring |
+| `Theme` | View theme resolution |
+| `Demo` | Per-visitor demo schemas |
 
 Create a new module:
 
@@ -25,6 +61,30 @@ php artisan module:make ModuleName
 ```
 
 Enable it in `modules_statuses.json`.
+
+## Frontend
+
+The browser layer is strict TypeScript compiled by Vite. There is no runtime
+framework and no animation.
+
+```
+resources/ts/core/       DOM, HTTP, storage and behaviour-registry primitives
+resources/ts/modules/    One file per behaviour, mounted from data-* attributes
+resources/ts/realtime/   Echo subscription for the inbox
+resources/css/base/      Design tokens, reset, typography, layout
+resources/css/components/ Component styles (button, card, header, panel, ...)
+```
+
+Behaviour is bound declaratively: a module declares a selector, the registry mounts
+it once per element. No inline scripts in Blade.
+
+```bash
+npm run type-check   # tsc --noEmit, strict + noUncheckedIndexedAccess
+npm run lint         # eslint, type-checked rules
+npm run build        # type-check then vite build
+```
+
+Breakpoints: base (phone), 40rem, 48rem (tablet), 64rem (desktop), 80rem (wide).
 
 ## Quick Start
 
@@ -43,7 +103,14 @@ App URLs:
 
 ### Local
 
-Requirements: PHP 8.2+, Composer, Node 18+, database server.
+Requirements: PHP 8.4+, Composer, Node 20+, PostgreSQL 16+.
+
+Create the databases first:
+
+```bash
+createdb openclassify
+createdb openclassify_testing
+```
 
 ```bash
 composer install
@@ -54,6 +121,10 @@ php artisan migrate
 php artisan db:seed
 composer run dev
 ```
+
+`db:seed` populates every module with realistic sample data: locations, a category
+tree, 120 listings with images, videos, conversations, favourites, offers, reviews,
+reports, notifications, promotion plans and orders, and CMS pages.
 
 ## Seeded Accounts
 
@@ -130,8 +201,17 @@ Channel strategy:
 
 ```bash
 php artisan test
-php artisan optimize:clear
-php artisan view:cache
+npm run type-check
+npm run lint
+npm run build
+vendor/bin/pint
+```
+
+The test suite runs against the `openclassify_testing` PostgreSQL database. Prepare
+it once with:
+
+```bash
+APP_ENV=testing DB_DATABASE=openclassify_testing php artisan migrate:fresh --seed --force
 ```
 
 ## Production Checklist

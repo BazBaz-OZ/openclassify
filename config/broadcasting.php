@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'default' => env('BROADCAST_CONNECTION', 'null'),
     'connections' => [
-
         'reverb' => [
             'driver' => 'reverb',
             'key' => env('REVERB_APP_KEY'),
@@ -48,7 +49,5 @@ return [
         'null' => [
             'driver' => 'null',
         ],
-
     ],
-
 ];

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'ai_provider' => env('QUICK_LISTING_AI_PROVIDER', 'openai'),
     'ai_model' => env('QUICK_LISTING_AI_MODEL', 'gpt-5.2'),

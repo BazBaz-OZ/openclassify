@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Listing\Models;
 
+use App\Support\FavoriteDirectory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,7 +25,6 @@ use Modules\Listing\Support\ListingImageViewData;
 use Modules\Listing\Support\ListingPanelHelper;
 use Modules\Site\App\Support\LocalMedia;
 use Modules\User\App\Models\User;
-use Modules\Video\Enums\VideoStatus;
 use Modules\Video\Models\Video;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -141,20 +141,7 @@ class Listing extends Model implements HasMedia
 
     public function scopeWithPanelIndexState(Builder $query): Builder
     {
-        return $query
-            ->with('category:id,name')
-            ->withCount('favoritedByUsers')
-            ->withCount('videos')
-            ->withCount([
-                'videos as ready_videos_count' => fn (Builder $videoQuery): Builder => $videoQuery
-                    ->whereNotNull('path')
-                    ->where('is_active', true),
-                'videos as pending_videos_count' => fn (Builder $videoQuery): Builder => $videoQuery
-                    ->whereIn('status', [
-                        VideoStatus::Pending->value,
-                        VideoStatus::Processing->value,
-                    ]),
-            ]);
+        return $query->with('category:id,name');
     }
 
     public function scopeForCategory(Builder $query, ?int $categoryId): Builder
@@ -403,6 +390,14 @@ class Listing extends Model implements HasMedia
             ->latest('id')
             ->paginate(10)
             ->withQueryString();
+
+        $favoriteCounts = FavoriteDirectory::listingFavoriteCounts(
+            $listings->getCollection()->map(static fn (self $listing): int => (int) $listing->getKey())->all()
+        );
+
+        $listings->getCollection()->each(static function (self $listing) use ($favoriteCounts): void {
+            $listing->setAttribute('favorited_by_users_count', $favoriteCounts[(int) $listing->getKey()] ?? 0);
+        });
 
         return [
             'listings' => $listings,

@@ -1,108 +1,132 @@
-@extends('app::layouts.app')
+@extends('panel::layouts.panel', ['panelSection' => 'profile'])
 
-@section('title', 'My Profile')
+@section('title', __('panel::messages.profile'))
 
-@section('content')
 @php
-    $displayName = trim((string) ($user->name ?: 'User'));
-    $initialSeed = trim((string) ($displayName ?: $user->email ?: 'U'));
-    $initials = collect(preg_split('/\s+/', $initialSeed) ?: [])
-        ->filter()
-        ->take(2)
-        ->map(fn (string $segment): string => mb_strtoupper(mb_substr($segment, 0, 1)))
-        ->implode('');
-    $memberSince = $user->created_at?->format('M Y');
-    $stats = [
-        [
-            'label' => 'Listings',
-            'value' => (int) ($user->listings_count ?? 0),
-            'hint' => 'Ads you manage from your dashboard.',
-        ],
-        [
-            'label' => 'Saved Listings',
-            'value' => (int) ($user->favorite_listings_count ?? 0),
-            'hint' => 'Items you bookmarked for later.',
-        ],
-        [
-            'label' => 'Saved Searches',
-            'value' => (int) ($user->favorite_searches_count ?? 0),
-            'hint' => 'Searches you can revisit instantly.',
-        ],
-        [
-            'label' => 'Saved Sellers',
-            'value' => (int) ($user->favorite_sellers_count ?? 0),
-            'hint' => 'Sellers you want to keep an eye on.',
-        ],
-    ];
+    $displayName = trim((string) $user->getAttribute('name'));
+    $initials = \App\Support\UserDirectory::initials($displayName !== '' ? $displayName : (string) $user->getAttribute('email'));
 @endphp
 
-<div class="profile-page mx-auto max-w-[1320px] px-4 py-6 md:py-8">
-    <div class="grid gap-6 xl:grid-cols-[300px,minmax(0,1fr)]">
-        <aside class="profile-side-nav space-y-6">
-            <div class="relative overflow-hidden rounded-[30px] border border-slate-200 bg-white p-6">
-                <div class="relative">
-                    <div class="flex items-start gap-4">
-                        <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] bg-slate-900 text-xl font-semibold tracking-tight text-white shadow-sm">
-                            {{ $initials !== '' ? $initials : 'U' }}
-                        </div>
+@section('panel_content')
+<header class="panel-head">
+    <div class="panel-head__text">
+        <h1 class="title-page">{{ __('panel::messages.profile') }}</h1>
+        <p class="text-muted">{{ __('user::messages.profile_lead') }}</p>
+    </div>
+    <a href="{{ route('sellers.show', $user) }}" class="button button--secondary">{{ __('site::messages.view_profile') }}</a>
+</header>
 
-                        <div class="min-w-0 pt-1">
-                            <p class="text-[0.68rem] font-semibold uppercase tracking-[0.26em] text-slate-400">My account</p>
-                            <h1 class="mt-2 text-[1.9rem] font-semibold leading-tight text-slate-950">{{ $displayName }}</h1>
-                            <p class="mt-1 break-all text-sm text-slate-600">{{ $user->email }}</p>
-                        </div>
-                    </div>
+<div class="grid grid--split">
+    <div class="stack stack--loose">
+        <section class="card">
+            <div class="card__head"><h2 class="card__title">{{ __('user::messages.profile') }}</h2></div>
+            <form method="POST" action="{{ route('profile.update') }}" class="card__body">
+                @csrf
+                @method('PATCH')
 
-                    <div class="mt-5 flex flex-wrap gap-2">
-                        <span @class([
-                            'inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold',
-                            'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' => $user->hasVerifiedEmail(),
-                            'bg-amber-50 text-amber-700 ring-1 ring-amber-200' => ! $user->hasVerifiedEmail(),
-                        ])>
-                            {{ $user->hasVerifiedEmail() ? 'Email verified' : 'Verification pending' }}
-                        </span>
-
-                        @if ($memberSince)
-                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
-                                Member since {{ $memberSince }}
-                            </span>
-                        @endif
-                    </div>
-
-                    <div class="mt-6 rounded-[24px] bg-slate-950 px-5 py-4 text-white shadow-sm">
-                        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.26em] text-slate-300">Profile visibility</p>
-                    </div>
-                </div>
-            </div>
-
-            @include('panel::partials.sidebar', ['activeMenu' => 'profile'])
-        </aside>
-
-        <section class="space-y-6">
-            <div class="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
-                @foreach ($stats as $stat)
-                    <div class="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
-                        <p class="text-sm font-semibold text-slate-500">{{ $stat['label'] }}</p>
-                        <p class="mt-3 text-4xl font-semibold tracking-[-0.04em] text-slate-950">{{ number_format($stat['value']) }}</p>
-                        <p class="mt-2 text-sm leading-6 text-slate-500">{{ $stat['hint'] }}</p>
-                    </div>
-                @endforeach
-            </div>
-
-            <div class="grid gap-6 2xl:grid-cols-[minmax(0,1.2fr),minmax(0,0.8fr)]">
-                <div class="panel-surface profile-card">
-                    @include('user::profile.partials.update-profile-information-form')
+                <div class="field">
+                    <label class="field__label" for="profile-name">{{ __('user::messages.name') }}</label>
+                    <input id="profile-name" type="text" name="name" value="{{ old('name', $user->getAttribute('name')) }}" class="input" required>
+                    @error('name')<p class="field__error">{{ $message }}</p>@enderror
                 </div>
 
-                <div class="panel-surface profile-card">
-                    @include('user::profile.partials.update-password-form')
+                <div class="field">
+                    <label class="field__label" for="profile-email">{{ __('user::messages.email') }}</label>
+                    <input id="profile-email" type="email" name="email" value="{{ old('email', $user->getAttribute('email')) }}" class="input" required>
+                    @error('email')<p class="field__error">{{ $message }}</p>@enderror
                 </div>
-            </div>
 
-            <div class="panel-surface profile-card profile-card-danger">
-                @include('user::profile.partials.delete-user-form')
+                <div class="field">
+                    <label class="field__label" for="profile-phone">{{ __('user::messages.phone') }}</label>
+                    <input id="profile-phone" type="tel" name="phone" value="{{ old('phone', $user->getAttribute('phone')) }}" class="input">
+                    @error('phone')<p class="field__error">{{ $message }}</p>@enderror
+                </div>
+
+                <button type="submit" class="button button--primary">{{ __('user::messages.save_changes') }}</button>
+            </form>
+        </section>
+
+        <section class="card">
+            <div class="card__head"><h2 class="card__title">{{ __('user::messages.update_password') }}</h2></div>
+            <form method="POST" action="{{ route('password.update') }}" class="card__body">
+                @csrf
+                @method('PUT')
+
+                <div class="field">
+                    <label class="field__label" for="current_password">{{ __('user::messages.current_password') }}</label>
+                    <input id="current_password" type="password" name="current_password" class="input" autocomplete="current-password">
+                    @error('current_password')<p class="field__error">{{ $message }}</p>@enderror
+                </div>
+
+                <div class="field__row field__row--two">
+                    <div class="field">
+                        <label class="field__label" for="new_password">{{ __('user::messages.new_password') }}</label>
+                        <input id="new_password" type="password" name="password" class="input" autocomplete="new-password">
+                        @error('password')<p class="field__error">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="field">
+                        <label class="field__label" for="new_password_confirmation">{{ __('user::messages.confirm_password') }}</label>
+                        <input id="new_password_confirmation" type="password" name="password_confirmation" class="input" autocomplete="new-password">
+                    </div>
+                </div>
+
+                <button type="submit" class="button button--secondary">{{ __('user::messages.update_password') }}</button>
+            </form>
+        </section>
+
+        <section class="card">
+            <div class="card__head"><h2 class="card__title">{{ __('user::messages.delete_account') }}</h2></div>
+            <div class="card__body">
+                <p class="text-muted">{{ __('user::messages.delete_account_lead') }}</p>
+                <form method="POST" action="{{ route('profile.destroy') }}" data-confirm="{{ __('user::messages.delete_account_lead') }}" class="stack stack--tight">
+                    @csrf
+                    @method('DELETE')
+                    <div class="field">
+                        <label class="field__label" for="delete-password">{{ __('user::messages.password') }}</label>
+                        <input id="delete-password" type="password" name="password" class="input" required>
+                    </div>
+                    <button type="submit" class="button button--critical">{{ __('user::messages.delete_confirm') }}</button>
+                </form>
             </div>
         </section>
     </div>
+
+    <aside class="stack stack--loose">
+        <section class="card">
+            <div class="card__body">
+                <div class="row">
+                    <span class="avatar avatar--large">{{ $initials }}</span>
+                    <div class="stack" style="gap:2px">
+                        <p class="title-card">{{ $displayName }}</p>
+                        <p class="text-meta">{{ $user->getAttribute('email') }}</p>
+                        @if($user->hasVerifiedEmail())
+                            <span class="badge badge--positive">{{ __('user::messages.verify_email') }}</span>
+                        @else
+                            <span class="badge badge--caution">{{ __('user::messages.verify_email') }}</span>
+                        @endif
+                    </div>
+                </div>
+
+                <dl class="spec-list">
+                    <div class="spec-list__row">
+                        <dt class="spec-list__label">{{ __('panel::messages.my_listings') }}</dt>
+                        <dd class="spec-list__value">{{ (int) $user->getAttribute('listings_count') }}</dd>
+                    </div>
+                    <div class="spec-list__row">
+                        <dt class="spec-list__label">{{ __('favorite::messages.saved_listings') }}</dt>
+                        <dd class="spec-list__value">{{ (int) $user->getAttribute('favorite_listings_count') }}</dd>
+                    </div>
+                    <div class="spec-list__row">
+                        <dt class="spec-list__label">{{ __('favorite::messages.saved_searches') }}</dt>
+                        <dd class="spec-list__value">{{ (int) $user->getAttribute('favorite_searches_count') }}</dd>
+                    </div>
+                    <div class="spec-list__row">
+                        <dt class="spec-list__label">{{ __('favorite::messages.followed_sellers') }}</dt>
+                        <dd class="spec-list__value">{{ (int) $user->getAttribute('favorite_sellers_count') }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </section>
+    </aside>
 </div>
 @endsection

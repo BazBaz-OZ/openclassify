@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\User\App\Models;
 
+use App\Support\FavoriteDirectory;
+use App\Support\NotificationDirectory;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
@@ -28,7 +30,6 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\ModelStates\HasStates;
 use Spatie\Permission\Traits\HasRoles;
-use Throwable;
 
 class User extends Authenticatable implements FilamentUser, HasAvatar
 {
@@ -217,20 +218,12 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
 
     public function unreadNotificationCount(): int
     {
-        try {
-            return (int) $this->unreadNotifications()->count();
-        } catch (Throwable) {
-            return 0;
-        }
+        return NotificationDirectory::unreadCountForUser((int) $this->getKey());
     }
 
     public function savedListingsCount(): int
     {
-        try {
-            return (int) $this->favoriteListings()->count();
-        } catch (Throwable) {
-            return 0;
-        }
+        return FavoriteDirectory::savedListingCountForUser((int) $this->getKey());
     }
 
     public function headerBadgeCounts(): array
@@ -301,11 +294,13 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
 
     public function loadPanelProfile(): self
     {
-        return $this->loadCount([
-            'listings',
-            'favoriteListings',
-            'favoriteSearches',
-            'favoriteSellers',
-        ]);
+        $userId = (int) $this->getKey();
+
+        $this->setAttribute('listings_count', Listing::query()->ownedByUser($userId)->count());
+        $this->setAttribute('favorite_listings_count', FavoriteDirectory::savedListingCountForUser($userId));
+        $this->setAttribute('favorite_sellers_count', FavoriteDirectory::savedSellerCountForUser($userId));
+        $this->setAttribute('favorite_searches_count', FavoriteSearch::query()->where('user_id', $userId)->count());
+
+        return $this;
     }
 }

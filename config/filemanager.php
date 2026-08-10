@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 use MWGuerra\FileManager\Models\FileSystemItem;
 use MWGuerra\FileManager\Policies\FileSystemItemPolicy;
 
 return [
-    'mode' => 'database', // 'database' or 'storage'
+    'mode' => 'database',
     'storage_mode' => [
         'disk' => 'public',
         'root' => env('FILEMANAGER_ROOT', ''),
@@ -45,7 +47,7 @@ return [
     'upload' => [
         'disk' => 'public',
         'directory' => env('FILEMANAGER_UPLOAD_DIR', 'uploads'),
-        'max_file_size' => 100 * 1024, // 100 MB in kilobytes
+        'max_file_size' => 100 * 1024,
         'allowed_mimes' => [
             'video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo',
             'image/jpeg', 'image/png', 'image/gif', 'image/webp',
@@ -77,22 +79,22 @@ return [
         'sanitize_filenames' => true,
         'max_filename_length' => 255,
         'blocked_filename_patterns' => [
-            '/\.{2,}/',           // Multiple dots (path traversal)
-            '/^\./',              // Hidden files
-            '/[\x00-\x1f]/',      // Control characters
-            '/[<>:"|?*]/',        // Windows reserved characters
+            '/\.{2,}/',
+            '/^\./',
+            '/[\x00-\x1f]/',
+            '/[<>:"|?*]/',
         ],
     ],
     'authorization' => [
         'enabled' => env('FILEMANAGER_AUTH_ENABLED', true),
         'permissions' => [
-            'view_any' => null,    // Access file manager page
-            'view' => null,        // View/preview files
-            'create' => null,      // Upload files, create folders
-            'update' => null,      // Rename, move items
-            'delete' => null,      // Delete items
-            'delete_any' => null,  // Bulk delete
-            'download' => null,    // Download files
+            'view_any' => null,
+            'view' => null,
+            'create' => null,
+            'update' => null,
+            'delete' => null,
+            'delete_any' => null,
+            'download' => null,
         ],
         'policy' => FileSystemItemPolicy::class,
     ],

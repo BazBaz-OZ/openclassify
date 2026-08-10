@@ -27,6 +27,8 @@ class ListingSeeder extends Seeder
         'Well kept',
     ];
 
+    private const MAX_DEMO_LISTINGS = 120;
+
     public function run(): void
     {
         $users = $this->resolveSeederUsers();
@@ -44,8 +46,8 @@ class ListingSeeder extends Seeder
 
         foreach ($categories as $category) {
             foreach ($users as $user) {
-                if ($assignedImageIndex >= $imagePool->count()) {
-                    continue;
+                if ($assignedImageIndex >= self::MAX_DEMO_LISTINGS) {
+                    break 2;
                 }
 
                 $listingData = $this->buildListingData(
@@ -54,7 +56,7 @@ class ListingSeeder extends Seeder
                     $countries,
                     $turkeyCities,
                     $user,
-                    $imagePool->get($assignedImageIndex)
+                    $imagePool->get($assignedImageIndex % $imagePool->count())
                 );
                 $listing = $this->upsertListing($listingData, $category, $user);
                 $plannedSlugs[] = $listing->slug;

@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'default' => env('REVERB_SERVER', 'reverb'),
     'servers' => [
-
         'reverb' => [
             'host' => env('REVERB_SERVER_HOST', '0.0.0.0'),
             'port' => env('REVERB_SERVER_PORT', 8080),
@@ -29,10 +30,8 @@ return [
             'pulse_ingest_interval' => env('REVERB_PULSE_INGEST_INTERVAL', 15),
             'telescope_ingest_interval' => env('REVERB_TELESCOPE_INGEST_INTERVAL', 15),
         ],
-
     ],
     'apps' => [
-
         'provider' => 'config',
 
         'apps' => [
@@ -54,7 +53,5 @@ return [
                 'accept_client_events_from' => env('REVERB_APP_ACCEPT_CLIENT_EVENTS_FROM', 'members'),
             ],
         ],
-
     ],
-
 ];

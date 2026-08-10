@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
@@ -47,5 +49,4 @@ return [
     'google_maps' => [
         'api_key' => env('GOOGLE_MAPS_API_KEY'),
     ],
-
 ];

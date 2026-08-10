@@ -57,31 +57,6 @@ class ConversationController extends Controller
         ]);
     }
 
-    public function state(Request $request): JsonResponse
-    {
-        $userId = (int) $request->user()->getKey();
-        $messageFilter = $this->resolveMessageFilter($request);
-
-        [
-            'conversations' => $conversations,
-            'selectedConversation' => $selectedConversation,
-        ] = $this->resolveInboxState(
-            $userId,
-            $messageFilter,
-            $request->integer('conversation'),
-            false,
-        );
-
-        return response()->json([
-            'list_html' => $this->renderInboxList($conversations, $messageFilter, $selectedConversation),
-            'thread_html' => $this->renderInboxThread($selectedConversation, $messageFilter),
-            'selected_conversation_id' => $selectedConversation ? (int) $selectedConversation->getKey() : null,
-            'counts' => [
-                'unread_messages_total' => Conversation::unreadCountForUser($userId),
-            ],
-        ]);
-    }
-
     public function start(Request $request, Listing $listing): RedirectResponse|JsonResponse
     {
         $user = $request->user();
