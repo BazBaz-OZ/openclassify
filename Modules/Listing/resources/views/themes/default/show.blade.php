@@ -47,7 +47,7 @@
             </div>
 
             @if($galleryImages->count() > 1)
-            <div class="mt-3 grid grid-cols-5 gap-2">
+            <div class="mt-3 grid grid-cols-4 sm:grid-cols-5 gap-2">
                 @foreach($galleryImages->skip(1)->take(5) as $image)
                 <div class="rounded-lg border border-[var(--oc-border)] overflow-hidden aspect-square">
                     @include('listing::partials.responsive-image', [
@@ -95,7 +95,7 @@
         </div>
 
         <div>
-            <div class="rounded-2xl border border-[var(--oc-border)] p-5 sticky top-24">
+            <div class="rounded-2xl border border-[var(--oc-border)] p-5 lg:sticky lg:top-24">
                 <p class="text-3xl font-semibold text-[var(--oc-text)]">
                     @if($hasPrice)
                         @if($priceValue > 0)

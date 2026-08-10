@@ -513,6 +513,10 @@ body.oc-header-menu-open .oc-nav-wrap {
 }
 
 .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
     background: var(--oc-primary);
     color: #ffffff;
     border-radius: 999px;

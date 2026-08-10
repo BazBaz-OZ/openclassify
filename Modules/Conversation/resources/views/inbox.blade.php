@@ -35,7 +35,7 @@
             @endif
 
             <div class="grid grid-cols-1 xl:grid-cols-[420px,1fr] min-h-[620px]">
-                <div data-inbox-list-container>
+                <div data-inbox-list-container class="{{ $selectedConversation ? 'hidden xl:block' : 'block' }}">
                     @include('conversation::partials.inbox-list-pane', [
                         'conversations' => $conversations,
                         'messageFilter' => $messageFilter,
@@ -43,7 +43,7 @@
                     ])
                 </div>
 
-                <div data-inbox-thread-container>
+                <div data-inbox-thread-container class="{{ $selectedConversation ? 'block' : 'hidden xl:block' }}">
                     @include('conversation::partials.inbox-thread-pane', [
                         'selectedConversation' => $selectedConversation,
                         'messageFilter' => $messageFilter,

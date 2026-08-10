@@ -10,6 +10,11 @@
             : null;
     @endphp
     <div class="h-24 px-6 border-b border-slate-200 flex items-center gap-4">
+        <a href="{{ route('panel.inbox.index', ['message_filter' => $messageFilter]) }}" class="xl:hidden shrink-0 w-9 h-9 rounded-full border border-slate-200 grid place-items-center text-slate-600" aria-label="Back to inbox">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
         <div class="w-12 h-12 rounded-full bg-slate-600 text-white grid place-items-center font-semibold text-lg">
             {{ strtoupper(substr((string) ($activePartner?->name ?? 'K'), 0, 1)) }}
         </div>
@@ -27,7 +32,7 @@
         @php $isMine = (int) $message->sender_id === (int) auth()->id(); @endphp
         <div class="mb-4 flex {{ $isMine ? 'justify-end' : 'justify-start' }}" data-message-id="{{ $message->id }}">
             <div class="max-w-[80%]">
-                <div class="{{ $isMine ? 'bg-amber-100 text-slate-900' : 'bg-white text-slate-900 border border-slate-200' }} rounded-2xl px-4 py-2 text-base shadow-sm">
+                <div class="{{ $isMine ? 'bg-[var(--oc-primary-soft)] text-slate-900' : 'bg-white text-slate-900 border border-slate-200' }} rounded-2xl px-4 py-2 text-base shadow-sm">
                     {{ $message->body }}
                 </div>
                 <p class="text-xs text-slate-500 mt-1 {{ $isMine ? 'text-right' : 'text-left' }}">
@@ -52,7 +57,7 @@
                 @csrf
                 <input type="hidden" name="message_filter" value="{{ $messageFilter }}">
                 <input type="hidden" name="message" value="{{ $quickMessage }}">
-                <button type="submit" class="inline-flex items-center h-11 px-5 rounded-full border border-rose-300 text-rose-600 font-semibold text-sm hover:bg-rose-50">
+                <button type="submit" class="inline-flex items-center h-11 px-5 rounded-full border border-slate-300 text-slate-700 font-semibold text-sm hover:bg-slate-100">
                     {{ $quickMessage }}
                 </button>
             </form>
@@ -61,14 +66,14 @@
         <form method="POST" action="{{ route('conversations.messages.send', $selectedConversation) }}" class="flex items-center gap-2 border-t border-slate-200 pt-3 mt-1" data-inbox-send-form>
             @csrf
             <input type="hidden" name="message_filter" value="{{ $messageFilter }}">
-            <input type="text" name="message" value="{{ old('message') }}" placeholder="Write a message" maxlength="2000" class="h-12 flex-1 rounded-full border border-slate-300 px-5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300" required data-inbox-message-input>
+            <input type="text" name="message" value="{{ old('message') }}" placeholder="Write a message" maxlength="2000" class="h-12 flex-1 rounded-full border border-slate-300 px-5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300" required data-inbox-message-input>
             <button type="submit" class="h-12 w-12 rounded-full bg-black text-white grid place-items-center hover:bg-slate-800" aria-label="Send" data-inbox-send-button>
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h13m0 0l-5-5m5 5l-5 5"/>
                 </svg>
             </button>
         </form>
-        <p class="text-xs text-rose-600 mt-2 px-2 hidden" data-inbox-send-error></p>
+        <p class="text-xs text-red-600 mt-2 px-2 hidden" data-inbox-send-error></p>
     </div>
     @else
     <div class="h-full min-h-[620px] grid place-items-center px-8 text-center text-slate-500">

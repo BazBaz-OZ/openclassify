@@ -93,7 +93,7 @@
                 @endauth
             </div>
         </div>
-        <div class="hidden lg:block rounded-[28px] overflow-hidden border border-[var(--oc-border)] bg-[var(--oc-surface)] aspect-[4/3]">
+        <div class="rounded-[28px] overflow-hidden border border-[var(--oc-border)] bg-[var(--oc-surface)] aspect-[16/10] lg:aspect-[4/3]">
             @if($heroImage)
             @include('listing::partials.responsive-image', [
                 'image' => $heroImage,

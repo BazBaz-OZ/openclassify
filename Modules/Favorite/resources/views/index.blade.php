@@ -28,7 +28,7 @@
                     'category' => $selectedCategoryId,
                 ], fn ($value) => !is_null($value) && $value !== '');
             @endphp
-            <div class="border-b-2 border-blue-900 px-4 py-3 flex flex-wrap items-center gap-3">
+            <div class="border-b-2 border-slate-900 px-4 py-3 flex flex-wrap items-center gap-3">
                 <h1 class="text-3xl font-bold text-slate-800 mr-auto">Saved Listings</h1>
                 <div class="inline-flex border border-slate-300 overflow-hidden">
                     <a href="{{ route('favorites.index', array_merge($listingTabQuery, ['status' => 'all'])) }}" class="px-5 py-2 text-sm font-semibold {{ $statusFilter === 'all' ? 'bg-slate-700 text-white' : 'bg-white text-slate-700 hover:bg-slate-100' }}">
@@ -90,7 +90,7 @@
                                         @endif
                                     </a>
                                     <div>
-                                        <a href="{{ route('listings.show', $listing) }}" class="font-semibold text-2xl text-slate-800 hover:text-blue-700 leading-6">
+                                        <a href="{{ route('listings.show', $listing) }}" class="font-semibold text-2xl text-slate-800 hover:text-slate-900 leading-6">
                                             {{ $listing->title }}
                                         </a>
                                         <p class="text-sm text-slate-500 mt-2">{{ $meta !== '' ? $meta : 'No category or location data' }}</p>
@@ -102,13 +102,13 @@
                             <td class="px-4 py-4">
                                 @if($canMessageListing)
                                     @if($conversationId)
-                                    <a href="{{ route('panel.inbox.index', ['conversation' => $conversationId]) }}" class="inline-flex items-center h-10 px-4 border border-rose-300 text-rose-600 text-sm font-semibold rounded-full hover:bg-rose-50">
+                                    <a href="{{ route('panel.inbox.index', ['conversation' => $conversationId]) }}" class="inline-flex items-center h-10 px-4 border border-slate-300 text-slate-700 text-sm font-semibold rounded-full hover:bg-slate-50">
                                         Open chat
                                     </a>
                                     @else
                                     <form method="POST" action="{{ route('conversations.start', $listing) }}">
                                         @csrf
-                                        <button type="submit" class="inline-flex items-center h-10 px-4 bg-rose-500 text-white text-sm font-semibold rounded-full hover:bg-rose-600">
+                                        <button type="submit" class="inline-flex items-center h-10 px-4 bg-slate-900 text-white text-sm font-semibold rounded-full hover:bg-slate-700">
                                             Send message
                                         </button>
                                     </form>
@@ -120,7 +120,7 @@
                             <td class="px-4 py-4 text-right">
                                 <form method="POST" action="{{ route('favorites.listings.toggle', $listing) }}">
                                     @csrf
-                                    <button type="submit" class="text-sm font-semibold text-rose-500 hover:text-rose-600">Remove</button>
+                                    <button type="submit" class="text-sm font-semibold text-slate-600 hover:text-slate-900">Remove</button>
                                 </form>
                             </td>
                         </tr>
@@ -167,7 +167,7 @@
                         </p>
                     </div>
                     <div class="flex items-center gap-3">
-                        <a href="{{ $searchUrl }}" class="inline-flex items-center h-10 px-4 bg-blue-600 text-white text-sm font-semibold rounded hover:bg-blue-700">
+                        <a href="{{ $searchUrl }}" class="inline-flex items-center h-10 px-4 bg-slate-900 text-white text-sm font-semibold rounded-full hover:bg-slate-700">
                             Open search
                         </a>
                         <form method="POST" action="{{ route('favorites.searches.destroy', $favoriteSearch) }}">
@@ -199,7 +199,7 @@
                 @forelse($favoriteSellers as $seller)
                 <article class="px-4 py-4 flex flex-col md:flex-row md:items-center gap-3">
                     <a href="{{ route('listings.index', ['user' => $seller->id]) }}" class="flex items-center gap-3 flex-1 hover:opacity-90">
-                        <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-700 font-bold grid place-items-center">
+                        <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-900 font-bold grid place-items-center">
                             {{ strtoupper(substr((string) $seller->name, 0, 1)) }}
                         </div>
                         <div>
@@ -210,7 +210,7 @@
                     </a>
                     <form method="POST" action="{{ route('favorites.sellers.toggle', $seller) }}">
                         @csrf
-                        <button type="submit" class="inline-flex items-center h-10 px-4 border border-rose-200 text-sm font-semibold text-rose-600 hover:bg-rose-50">
+                        <button type="submit" class="inline-flex items-center h-10 px-4 border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                             Remove seller
                         </button>
                     </form>

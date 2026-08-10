@@ -2,13 +2,13 @@
     <div class="px-6 py-4 border-b border-slate-200">
         <p class="mb-2 text-sm font-semibold text-slate-600">Filters</p>
         <div class="flex flex-wrap items-center gap-2">
-            <a href="{{ route('panel.inbox.index', ['message_filter' => 'all']) }}" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold border {{ $messageFilter === 'all' ? 'border-rose-400 bg-rose-50 text-rose-600' : 'border-slate-300 text-slate-600 hover:bg-slate-100' }}">
+            <a href="{{ route('panel.inbox.index', ['message_filter' => 'all']) }}" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold border {{ $messageFilter === 'all' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 text-slate-600 hover:bg-slate-100' }}">
                 All
             </a>
-            <a href="{{ route('panel.inbox.index', ['message_filter' => 'unread']) }}" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold border {{ $messageFilter === 'unread' ? 'border-rose-400 bg-rose-50 text-rose-600' : 'border-slate-300 text-slate-600 hover:bg-slate-100' }}">
+            <a href="{{ route('panel.inbox.index', ['message_filter' => 'unread']) }}" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold border {{ $messageFilter === 'unread' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 text-slate-600 hover:bg-slate-100' }}">
                 Unread
             </a>
-            <a href="{{ route('panel.inbox.index', ['message_filter' => 'important']) }}" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold border {{ $messageFilter === 'important' ? 'border-rose-400 bg-rose-50 text-rose-600' : 'border-slate-300 text-slate-600 hover:bg-slate-100' }}">
+            <a href="{{ route('panel.inbox.index', ['message_filter' => 'important']) }}" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold border {{ $messageFilter === 'important' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 text-slate-600 hover:bg-slate-100' }}">
                 Important
             </a>
         </div>
@@ -22,7 +22,7 @@
             $conversationImage = $conversationListing?->primaryImageData('thumb');
             $lastMessage = trim((string) ($conversation->lastMessage?->body ?? ''));
         @endphp
-        <a href="{{ route('panel.inbox.index', ['message_filter' => $messageFilter, 'conversation' => $conversation->id]) }}" class="block px-6 py-4 {{ $isSelected ? 'bg-rose-50' : 'hover:bg-slate-50' }}">
+        <a href="{{ route('panel.inbox.index', ['message_filter' => $messageFilter, 'conversation' => $conversation->id]) }}" class="block px-6 py-4 {{ $isSelected ? 'bg-slate-100' : 'hover:bg-slate-50' }}">
             <div class="flex gap-3">
                 <div class="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0">
                     @if($conversationImage)
@@ -46,7 +46,7 @@
                     </p>
                 </div>
                 @if($conversation->unread_count > 0)
-                <span class="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-rose-500 text-white text-xs font-semibold">
+                <span class="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-slate-1000 text-white text-xs font-semibold">
                     {{ $conversation->unread_count }}
                 </span>
                 @endif
