@@ -19,6 +19,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Storage;
 use Jeffgreco13\FilamentBreezy\Traits\TwoFactorAuthenticatable;
+use Laravel\Cashier\Billable;
 use Laravel\Sanctum\HasApiTokens;
 use Modules\Conversation\App\Models\Conversation;
 use Modules\Conversation\App\Models\ConversationMessage;
@@ -33,6 +34,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser, HasAvatar
 {
+    use Billable;
     use HasApiTokens;
     use HasFactory;
     use HasRoles;
