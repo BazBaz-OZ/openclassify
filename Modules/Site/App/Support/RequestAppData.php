@@ -41,7 +41,7 @@ final class RequestAppData
         $fallbackFacebookClientSecret = config('services.facebook.client_secret');
         $fallbackAppleClientId = config('services.apple.client_id');
         $fallbackAppleClientSecret = config('services.apple.client_secret');
-        $fallbackDefaultCountryCode = (string) config('app.default_country_code', '+90');
+        $fallbackDefaultCountryCode = (string) config('app.default_country_code', '+61');
 
         $generalSettings = [
             'site_name' => $fallbackName,
@@ -146,8 +146,8 @@ final class RequestAppData
             'services.apple.stateless' => true,
             'services.apple.enabled' => (bool) $generalSettings['apple_login_enabled'],
             'money.defaults.currency' => $generalSettings['currencies'][0] ?? 'USD',
-            'app.default_country_code' => $generalSettings['default_country_code'] ?? '+90',
-            'app.default_country_iso2' => CountryCodeManager::iso2FromCountryCode($generalSettings['default_country_code'] ?? '+90') ?? 'TR',
+            'app.default_country_code' => $generalSettings['default_country_code'] ?? '+61',
+            'app.default_country_iso2' => CountryCodeManager::iso2FromCountryCode($generalSettings['default_country_code'] ?? '+61') ?? 'AU',
         ]);
     }
 

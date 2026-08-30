@@ -7,7 +7,7 @@ return [
     'env' => env('APP_ENV', 'production'),
     'debug' => (bool) env('APP_DEBUG', false),
     'url' => env('APP_URL', 'http://localhost'),
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'Australia/Brisbane'),
     'locale' => env('APP_LOCALE', 'en'),
 
     'available_locales' => ['en', 'tr', 'ar', 'zh', 'es', 'fr', 'de', 'pt', 'ru', 'ja'],

@@ -127,7 +127,7 @@ class ManageGeneralSettings extends SettingsPage
                     ->helperText('Used as the default country in panel forms.'),
                 TagsInput::make('currencies')
                     ->label('Currencies')
-                    ->placeholder('TRY')
+                    ->placeholder('AUD')
                     ->default($defaults['currencies'])
                     ->helperText('Add 3-letter currency codes such as TRY, USD, or EUR.')
                     ->required()
@@ -217,8 +217,8 @@ class ManageGeneralSettings extends SettingsPage
             'sender_name' => $siteName,
             'sender_email' => (string) config('mail.from.address', 'info@'.$siteHost),
             'default_language' => in_array(config('app.locale'), array_keys($this->localeOptions()), true) ? (string) config('app.locale') : 'en',
-            'default_country_code' => CountryCodeManager::normalizeCountryCode(config('app.default_country_code', '+90')),
-            'currencies' => $this->normalizeCurrencies(config('app.currencies', ['TRY'])),
+            'default_country_code' => CountryCodeManager::normalizeCountryCode(config('app.default_country_code', '+61')),
+            'currencies' => $this->normalizeCurrencies(config('app.currencies', ['AUD'])),
             'linkedin_url' => 'https://www.linkedin.com/company/openclassify',
             'instagram_url' => 'https://www.instagram.com/openclassify',
             'whatsapp' => '+905551112233',
