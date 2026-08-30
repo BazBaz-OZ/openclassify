@@ -19,29 +19,29 @@ class LocationSeeder extends Seeder
                 [
                     'name' => $country['name'],
                     'phone_code' => $country['phone_code'],
-                    'is_active' => true,
+                    'is_active' => $country['code'] === 'AU',
                 ]
             );
         }
 
-        $turkey = Country::query()->where('code', 'TR')->first();
+        $australia = Country::query()->where('code', 'AU')->first();
 
-        if (! $turkey) {
+        if (! $australia) {
             return;
         }
 
-        $turkeyCities = $this->turkeyCities();
+        $australianCities = $this->australianCities();
 
-        foreach ($turkeyCities as $city) {
+        foreach ($australianCities as $city) {
             City::updateOrCreate(
-                ['country_id' => (int) $turkey->id, 'name' => $city],
+                ['country_id' => (int) $australia->id, 'name' => $city],
                 ['is_active' => true]
             );
         }
 
         City::query()
-            ->where('country_id', (int) $turkey->id)
-            ->whereNotIn('name', $turkeyCities)
+            ->where('country_id', (int) $australia->id)
+            ->whereNotIn('name', $australianCities)
             ->delete();
     }
 
@@ -111,90 +111,26 @@ class LocationSeeder extends Seeder
         return substr($normalized, 0, 10);
     }
 
-    private function turkeyCities(): array
+    private function australianCities(): array
     {
         return [
-            'Adana',
-            'Adiyaman',
-            'Afyonkarahisar',
-            'Agri',
-            'Aksaray',
-            'Amasya',
-            'Ankara',
-            'Antalya',
-            'Ardahan',
-            'Artvin',
-            'Aydin',
-            'Balikesir',
-            'Bartin',
-            'Batman',
-            'Bayburt',
-            'Bilecik',
-            'Bingol',
-            'Bitlis',
-            'Bolu',
-            'Burdur',
-            'Bursa',
-            'Canakkale',
-            'Cankiri',
-            'Corum',
-            'Denizli',
-            'Diyarbakir',
-            'Duzce',
-            'Edirne',
-            'Elazig',
-            'Erzincan',
-            'Erzurum',
-            'Eskisehir',
-            'Gaziantep',
-            'Giresun',
-            'Gumushane',
-            'Hakkari',
-            'Hatay',
-            'Igdir',
-            'Isparta',
-            'Istanbul',
-            'Izmir',
-            'Kahramanmaras',
-            'Karabuk',
-            'Karaman',
-            'Kars',
-            'Kastamonu',
-            'Kayseri',
-            'Kilis',
-            'Kirikkale',
-            'Kirklareli',
-            'Kirsehir',
-            'Kocaeli',
-            'Konya',
-            'Kutahya',
-            'Malatya',
-            'Manisa',
-            'Mardin',
-            'Mersin',
-            'Mugla',
-            'Mus',
-            'Nevsehir',
-            'Nigde',
-            'Ordu',
-            'Osmaniye',
-            'Rize',
-            'Sakarya',
-            'Samsun',
-            'Siirt',
-            'Sinop',
-            'Sivas',
-            'Sanliurfa',
-            'Sirnak',
-            'Tekirdag',
-            'Tokat',
-            'Trabzon',
-            'Tunceli',
-            'Usak',
-            'Van',
-            'Yalova',
-            'Yozgat',
-            'Zonguldak',
+            'Adelaide',
+            'Belconnen',
+            'Brisbane',
+            'Canberra',
+            'Darwin',
+            'Geelong',
+            'Gold Coast',
+            'Gungahlin',
+            'Hobart',
+            'Ipswich',
+            'Melbourne',
+            'Newcastle',
+            'Perth',
+            'Springfield Lakes',
+            'Sydney',
+            'Woden',
+            'Wollongong',
         ];
     }
 }

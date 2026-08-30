@@ -17,35 +17,35 @@ final class DemoUserCatalog
                 'email' => 'a@a.com',
                 'name' => 'Admin',
                 'password' => $password,
-                'phone' => '+905551112233',
+                'phone' => '+61491570006',
                 'is_admin' => true,
             ],
             [
                 'email' => 'b@b.com',
                 'name' => 'Member',
                 'password' => $password,
-                'phone' => '+905551112244',
+                'phone' => '+61491570156',
                 'is_admin' => false,
             ],
             [
                 'email' => 'c@c.com',
                 'name' => 'Ava Carter',
                 'password' => $password,
-                'phone' => '+905551112255',
+                'phone' => '+61491570157',
                 'is_admin' => false,
             ],
             [
                 'email' => 'd@d.com',
                 'name' => 'Liam Stone',
                 'password' => $password,
-                'phone' => '+905551112266',
+                'phone' => '+61491570158',
                 'is_admin' => false,
             ],
             [
                 'email' => 'e@e.com',
                 'name' => 'Mila Reed',
                 'password' => $password,
-                'phone' => '+905551112277',
+                'phone' => '+61491570159',
                 'is_admin' => false,
             ],
         ];
@@ -75,7 +75,7 @@ final class DemoUserCatalog
             }
         }
 
-        return '+905551110000';
+        return '+61491570110';
     }
 
     public static function isAdmin(string $email): bool

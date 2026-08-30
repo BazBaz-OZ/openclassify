@@ -11,7 +11,6 @@ use Modules\Category\Models\Category;
 use Modules\Listing\Models\Listing;
 use Modules\Listing\Support\SampleListingImageCatalog;
 use Modules\Location\Models\City;
-use Modules\Location\Models\Country;
 use Modules\User\App\Models\User;
 use Modules\User\App\Support\DemoUserCatalog;
 
@@ -38,9 +37,6 @@ class ListingSeeder extends Seeder
         if ($users->isEmpty() || $categories->isEmpty() || $imagePool->isEmpty()) {
             return;
         }
-
-        $countries = $this->resolveCountries();
-        $turkeyCities = $this->resolveTurkeyCities();
         $plannedSlugs = [];
         $assignedImageIndex = 0;
 
@@ -53,8 +49,6 @@ class ListingSeeder extends Seeder
                 $listingData = $this->buildListingData(
                     $category,
                     $assignedImageIndex,
-                    $countries,
-                    $turkeyCities,
                     $user,
                     $imagePool->get($assignedImageIndex % $imagePool->count())
                 );
@@ -108,48 +102,14 @@ class ListingSeeder extends Seeder
             ->values();
     }
 
-    private function resolveCountries(): Collection
-    {
-        return Country::query()
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'name', 'code'])
-            ->values();
-    }
-
-    private function resolveTurkeyCities(): Collection
-    {
-        $turkey = Country::query()
-            ->where('code', 'TR')
-            ->first(['id']);
-
-        if (! $turkey) {
-            return collect(['Istanbul', 'Ankara', 'Izmir', 'Bursa', 'Antalya']);
-        }
-
-        $cities = City::query()
-            ->where('country_id', (int) $turkey->id)
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->pluck('name')
-            ->map(fn ($name): string => trim((string) $name))
-            ->filter(fn (string $name): bool => $name !== '')
-            ->values();
-
-        return $cities->isNotEmpty()
-            ? $cities
-            : collect(['Istanbul', 'Ankara', 'Izmir', 'Bursa', 'Antalya']);
-    }
 
     private function buildListingData(
         Category $category,
         int $index,
-        Collection $countries,
-        Collection $turkeyCities,
         User $user,
         ?string $imagePath
     ): array {
-        $location = $this->resolveLocation($index, $countries, $turkeyCities);
+        $location = $this->resolveLocation($index);
         $title = $this->buildTitle($category, $index, $user);
         $slug = 'demo-'.Str::slug($user->email).'-'.$category->slug;
 
@@ -157,7 +117,7 @@ class ListingSeeder extends Seeder
             'slug' => $slug,
             'title' => $title,
             'description' => $this->buildDescription($category, $location['city'], $location['country'], $user),
-            'price' => $this->priceForIndex($index),
+            'price' => $this->priceForCategory($category, $index),
             'city' => $location['city'],
             'country' => $location['country'],
             'contact_phone' => DemoUserCatalog::phoneFor($user->email),
@@ -168,34 +128,36 @@ class ListingSeeder extends Seeder
         ];
     }
 
-    private function resolveLocation(int $index, Collection $countries, Collection $turkeyCities): array
+    private function resolveLocation(int $index): array
     {
-        $turkeyCountry = $countries->first(fn ($country): bool => strtoupper((string) $country->code) === 'TR');
-        $turkeyName = trim((string) ($turkeyCountry->name ?? 'Turkey')) ?: 'Turkey';
-        $useForeignCountry = $countries->count() > 1 && $index % 4 === 0;
+        // 40% Brisbane/Ipswich/Springfield, 35% Canberra region,
+        // 25% other Australian locations.
+        $locations = [
+            ['city' => 'Brisbane', 'country' => 'Australia'],
+            ['city' => 'Brisbane', 'country' => 'Australia'],
+            ['city' => 'Brisbane', 'country' => 'Australia'],
+            ['city' => 'Brisbane', 'country' => 'Australia'],
+            ['city' => 'Springfield Lakes', 'country' => 'Australia'],
+            ['city' => 'Springfield Lakes', 'country' => 'Australia'],
+            ['city' => 'Ipswich', 'country' => 'Australia'],
+            ['city' => 'Ipswich', 'country' => 'Australia'],
 
-        if ($useForeignCountry) {
-            $foreignCountries = $countries
-                ->filter(fn ($country): bool => strtoupper((string) $country->code) !== 'TR')
-                ->values();
+            ['city' => 'Canberra', 'country' => 'Australia'],
+            ['city' => 'Canberra', 'country' => 'Australia'],
+            ['city' => 'Canberra', 'country' => 'Australia'],
+            ['city' => 'Belconnen', 'country' => 'Australia'],
+            ['city' => 'Belconnen', 'country' => 'Australia'],
+            ['city' => 'Gungahlin', 'country' => 'Australia'],
+            ['city' => 'Woden', 'country' => 'Australia'],
 
-            if ($foreignCountries->isNotEmpty()) {
-                $selected = $foreignCountries->get($index % $foreignCountries->count());
-                $countryName = trim((string) ($selected->name ?? ''));
-
-                return [
-                    'country' => $countryName !== '' ? $countryName : 'Turkey',
-                    'city' => $countryName !== '' ? $countryName : 'Istanbul',
-                ];
-            }
-        }
-
-        $city = trim((string) $turkeyCities->get($index % max(1, $turkeyCities->count())));
-
-        return [
-            'country' => $turkeyName,
-            'city' => $city !== '' ? $city : 'Istanbul',
+            ['city' => 'Gold Coast', 'country' => 'Australia'],
+            ['city' => 'Sydney', 'country' => 'Australia'],
+            ['city' => 'Melbourne', 'country' => 'Australia'],
+            ['city' => 'Adelaide', 'country' => 'Australia'],
+            ['city' => 'Perth', 'country' => 'Australia'],
         ];
+
+        return $locations[$index % count($locations)];
     }
 
     private function buildTitle(Category $category, int $index, User $user): string
@@ -221,27 +183,50 @@ class ListingSeeder extends Seeder
             '%s listed by %s. Clean demo condition, sample product photo assigned from the provided catalog, and ready for browsing, favorites, inbox, and panel testing. Pickup area: %s.',
             $categoryName !== '' ? $categoryName : 'Item',
             trim((string) $user->name) !== '' ? trim((string) $user->name) : 'a marketplace user',
-            $location !== '' ? $location : 'Turkey'
+            $location !== '' ? $location : 'Australia'
         );
     }
 
-    private function priceForIndex(int $index): int
+    private function priceForCategory(Category $category, int $index): int
     {
-        $basePrices = [
-            1499,
-            3250,
-            6490,
-            11800,
-            26500,
-            44990,
-            82000,
-            135000,
-        ];
+        $name = strtolower(trim((string) $category->name));
 
-        $base = $basePrices[$index % count($basePrices)];
-        $step = (int) floor($index / count($basePrices)) * 750;
+        $prices = match ($name) {
+            'phones' => [120, 250, 450, 700, 950, 1200],
+            'computers' => [250, 450, 700, 1200, 1800, 2500],
+            'tablets' => [120, 250, 400, 650, 900, 1200],
+            'tvs' => [100, 250, 450, 700, 1200, 1800],
 
-        return $base + $step;
+            'cars' => [3500, 6500, 9500, 14500, 22000, 32000],
+            'motorcycles' => [1800, 3500, 5500, 8500, 12000, 18000],
+            'trucks' => [9000, 15000, 24000, 35000, 50000, 75000],
+            'boats' => [2500, 5000, 9000, 15000, 25000, 35000],
+
+            'for sale' => [450000, 550000, 650000, 750000, 900000, 1200000],
+            'for rent' => [350, 450, 550, 650, 750, 900],
+            'commercial' => [300000, 450000, 600000, 800000, 1100000, 1500000],
+
+            'furniture' => [20, 80, 150, 300, 600, 1200],
+            'garden' => [20, 60, 120, 250, 500, 1000],
+            'appliances' => [50, 150, 300, 500, 800, 1400],
+
+            'men', 'women', 'kids' => [10, 30, 60, 120, 200, 350],
+            'shoes' => [20, 50, 80, 130, 200, 300],
+
+            'outdoor', 'fitness', 'team sports' => [20, 70, 150, 300, 600, 1200],
+
+            'full time' => [55000, 65000, 75000, 85000, 95000, 110000],
+            'part time' => [25000, 35000, 45000, 55000, 65000, 75000],
+            'freelance' => [300, 600, 1200, 2500, 5000, 8000],
+
+            'cleaning' => [80, 120, 160, 220, 300, 400],
+            'repair' => [100, 180, 250, 350, 500, 700],
+            'education' => [40, 60, 80, 100, 130, 160],
+
+            default => [20, 50, 100, 250, 500, 1000],
+        };
+
+        return $prices[$index % count($prices)];
     }
 
     private function upsertListing(array $data, Category $category, User $user): Listing
@@ -252,7 +237,7 @@ class ListingSeeder extends Seeder
                 'title' => $data['title'],
                 'description' => $data['description'],
                 'price' => $data['price'],
-                'currency' => 'TRY',
+                'currency' => 'AUD',
                 'city' => $data['city'],
                 'country' => $data['country'],
                 'category_id' => $category->id,
