@@ -7,10 +7,12 @@ if [ ! -f /var/www/html/.env ]; then
 fi
 
 php artisan migrate --force
-php artisan db:seed --force
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+# php artisan db:seed --force
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+php artisan filament:assets
+php artisan livewire:publish --assets
 php artisan storage:link
 
 php-fpm -D

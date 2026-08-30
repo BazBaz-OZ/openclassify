@@ -18,7 +18,6 @@ use Modules\Site\App\Settings\GeneralSettings;
 use Modules\Site\App\Support\HomeSlideDefaults;
 use Modules\Site\App\Support\LocalMedia;
 use Modules\Site\Support\Filament\HomeSlideFormSchema;
-use Tapp\FilamentCountryCodeField\Forms\Components\CountryCodeSelect;
 use UnitEnum;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
@@ -118,9 +117,12 @@ class ManageGeneralSettings extends SettingsPage
                     ->default($defaults['default_language'])
                     ->required()
                     ->searchable(),
-                CountryCodeSelect::make('default_country_code')
+                Select::make('default_country_code')
                     ->label('Default Country')
-                    ->default($defaults['default_country_code'])
+                    ->options([
+                        '+61' => 'Australia (+61)',
+                    ])
+                    ->default('+61')
                     ->required()
                     ->helperText('Used as the default country in panel forms.'),
                 TagsInput::make('currencies')

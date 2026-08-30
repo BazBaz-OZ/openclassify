@@ -1,4 +1,4 @@
-FROM php:8.3-fpm-alpine
+FROM php:8.4-fpm-alpine
 
 RUN apk add --no-cache \
     nginx \
@@ -16,8 +16,11 @@ RUN apk add --no-cache \
     icu-dev \
     libzip-dev \
     postgresql-dev \
+    $PHPIZE_DEPS \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd opcache intl zip
+    && docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd opcache intl zip \
+    && pecl install redis \
+    && docker-php-ext-enable redis
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
