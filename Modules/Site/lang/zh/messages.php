@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 return [
-    'site_name' => 'OpenClassify',
+    'site_name' => 'Sell My Junk',
     'home' => '首页',
     'categories' => '分类',
     'listings' => '列表',

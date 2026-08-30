@@ -17,8 +17,8 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_PUBLIC_STORAGE_URL', '/media'),
-            'serve' => true,
+            'url' => env('APP_PUBLIC_STORAGE_URL', '/storage'),
+            'serve' => false,
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

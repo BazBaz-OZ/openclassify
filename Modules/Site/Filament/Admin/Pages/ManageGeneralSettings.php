@@ -207,7 +207,7 @@ class ManageGeneralSettings extends SettingsPage
 
     private function defaultFormData(): array
     {
-        $siteName = (string) config('app.name', 'OpenClassify');
+        $siteName = (string) config('app.name', 'Sell My Junk');
         $siteHost = parse_url((string) config('app.url', 'https://oc2.test'), PHP_URL_HOST) ?: 'oc2.test';
 
         return [
@@ -219,8 +219,8 @@ class ManageGeneralSettings extends SettingsPage
             'default_language' => in_array(config('app.locale'), array_keys($this->localeOptions()), true) ? (string) config('app.locale') : 'en',
             'default_country_code' => CountryCodeManager::normalizeCountryCode(config('app.default_country_code', '+61')),
             'currencies' => $this->normalizeCurrencies(config('app.currencies', ['AUD'])),
-            'linkedin_url' => 'https://www.linkedin.com/company/openclassify',
-            'instagram_url' => 'https://www.instagram.com/openclassify',
+            'linkedin_url' => '',
+            'instagram_url' => '',
             'whatsapp' => '+905551112233',
             'enable_google_maps' => false,
             'enable_google_login' => false,

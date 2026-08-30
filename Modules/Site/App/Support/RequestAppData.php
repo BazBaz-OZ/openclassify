@@ -29,7 +29,7 @@ final class RequestAppData
 
     private function resolveGeneralSettings(): array
     {
-        $fallbackName = config('app.name', 'OpenClassify');
+        $fallbackName = config('app.name', 'Sell My Junk');
         $fallbackLocale = config('app.locale', 'en');
         $fallbackCurrencies = $this->normalizeCurrencies(config('app.currencies', ['USD']));
         $fallbackDescription = 'Buy and sell everything in your area.';

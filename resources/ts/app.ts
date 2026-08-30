@@ -34,7 +34,35 @@ const behaviors: readonly Behavior<never>[] = [
     revealPanel,
 ];
 
+function prepareListingImages(): void {
+    document.querySelectorAll<HTMLImageElement>('[data-listing-image]').forEach((image) => {
+        if (image.dataset['imageBound'] === '1') {
+            return;
+        }
+
+        image.dataset['imageBound'] = '1';
+
+        const reveal = (): void => {
+            image.classList.add('is-loaded');
+
+            const placeholder = image.previousElementSibling;
+
+            if (placeholder?.classList.contains('listing-card__image-loading')) {
+                placeholder.classList.add('is-hidden');
+            }
+        };
+
+        if (image.complete && image.naturalWidth > 0) {
+            reveal();
+            return;
+        }
+
+        image.addEventListener('load', reveal, { once: true });
+    });
+}
+
 function boot(): void {
+    prepareListingImages();
     startBehaviors(behaviors);
 }
 

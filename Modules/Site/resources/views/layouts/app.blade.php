@@ -1,6 +1,6 @@
 @php
     $settings = $generalSettings ?? [];
-    $siteName = $settings['site_name'] ?? config('app.name', 'OpenClassify');
+    $siteName = $settings['site_name'] ?? config('app.name', 'Sell My Junk');
     $siteDescription = $settings['site_description'] ?? __('site::messages.tagline');
     $siteLogoUrl = $settings['site_logo_url'] ?? null;
     $isAuthenticated = auth()->check();

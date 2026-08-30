@@ -91,7 +91,7 @@ final class ListingCustomFieldSeedCatalog
                 self::text('sport_level', 'Skill Level', 'Beginner, Intermediate'),
             ],
             'jobs' => [
-                self::text('company_name', 'Company Name', 'OpenClassify'),
+                self::text('company_name', 'Company Name', 'Sell My Junk'),
                 self::select('experience_level', 'Experience Level', ['Entry', 'Mid', 'Senior', 'Lead']),
                 self::boolean('remote', 'Remote'),
                 self::date('start_date', 'Start Date'),
