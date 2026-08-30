@@ -110,7 +110,7 @@ class ListingSeeder extends Seeder
         ?string $imagePath
     ): array {
         $location = $this->resolveLocation($index);
-        $title = $this->buildTitle($category, $index, $user);
+        $title = $this->buildTitle($category, $index);
         $slug = 'demo-'.Str::slug($user->email).'-'.$category->slug;
 
         return [
@@ -160,18 +160,218 @@ class ListingSeeder extends Seeder
         return $locations[$index % count($locations)];
     }
 
-    private function buildTitle(Category $category, int $index, User $user): string
+    private function buildTitle(Category $category, int $index): string
     {
-        $prefix = self::TITLE_PREFIXES[$index % count(self::TITLE_PREFIXES)];
-        $categoryName = trim((string) $category->name);
-        $ownerFragment = trim(Str::before($user->name, ' '));
+        $name = strtolower(trim((string) $category->name));
 
-        return sprintf(
-            '%s %s for %s',
-            $prefix,
-            $categoryName !== '' ? $categoryName : 'item',
-            $ownerFragment !== '' ? $ownerFragment : 'demo'
-        );
+        $titles = match ($name) {
+            'phones' => [
+                'Unlocked Smartphone in Excellent Condition',
+                'iPhone with Charger and Case',
+                'Android Phone - Great Everyday Mobile',
+                'Near New Smartphone',
+                'Budget Smartphone - Works Perfectly',
+            ],
+            'computers' => [
+                'Gaming Desktop PC',
+                'Fast Home and Office Computer',
+                'Desktop PC with Monitor',
+                'Compact Computer - Ready to Use',
+                'High Performance Workstation',
+            ],
+            'tablets' => [
+                'Tablet in Excellent Condition',
+                'iPad with Protective Case',
+                'Android Tablet - Great for Home',
+                'Lightweight Tablet with Charger',
+                'Family Tablet - Ready to Use',
+            ],
+            'tvs' => [
+                'Smart TV in Excellent Condition',
+                'Large Screen 4K Television',
+                'Smart TV with Remote',
+                'LED Television - Works Perfectly',
+                'Quality TV - Great Picture',
+            ],
+
+            'cars' => [
+                'Reliable Automatic Hatchback',
+                'Well Maintained Family Sedan',
+                'Low Kilometre SUV',
+                'Economical Daily Driver',
+                'Late Model Family Car',
+            ],
+            'motorcycles' => [
+                'Learner Approved Motorcycle',
+                'Well Maintained Road Bike',
+                'Low Kilometre Motorcycle',
+                'Weekend Cruiser',
+                'Reliable Commuter Motorcycle',
+            ],
+            'trucks' => [
+                'Reliable Work Truck',
+                'Well Maintained Light Truck',
+                'Commercial Truck Ready for Work',
+                'Tipper Truck in Good Condition',
+                'Low Kilometre Delivery Truck',
+            ],
+            'boats' => [
+                'Fishing Boat with Trailer',
+                'Family Runabout',
+                'Weekend Fishing Boat',
+                'Boat and Trailer Package',
+                'Well Maintained Recreational Boat',
+            ],
+
+            'for sale' => [
+                'Family Home in Great Location',
+                'Modern Home with Plenty of Space',
+                'Well Presented Three Bedroom Home',
+                'Spacious Family Property',
+                'Move-In Ready Home',
+            ],
+            'for rent' => [
+                'Modern Home for Rent',
+                'Two Bedroom Unit Available',
+                'Family Home Available Now',
+                'Well Located Rental Property',
+                'Spacious Apartment for Rent',
+            ],
+            'commercial' => [
+                'Commercial Property Opportunity',
+                'Office Space in Convenient Location',
+                'Retail Premises for Sale',
+                'Commercial Investment Property',
+                'Warehouse and Office Facility',
+            ],
+
+            'furniture' => [
+                'Solid Timber Dining Table',
+                'Comfortable Lounge Suite',
+                'Bedroom Furniture Set',
+                'Modern Storage Cabinet',
+                'Outdoor Dining Setting',
+            ],
+            'garden' => [
+                'Garden Tools and Equipment',
+                'Outdoor Planter and Garden Set',
+                'Lawn Mower in Good Condition',
+                'Outdoor Garden Furniture',
+                'Garden Equipment Bundle',
+            ],
+            'appliances' => [
+                'Fridge in Excellent Working Order',
+                'Front Load Washing Machine',
+                'Microwave in Great Condition',
+                'Quality Dishwasher',
+                'Kitchen Appliance Bundle',
+            ],
+
+            'men' => [
+                'Mens Clothing Bundle',
+                'Quality Mens Jacket',
+                'Mens Casual Clothing',
+                'Near New Mens Clothing',
+                'Mens Wardrobe Clearout',
+            ],
+            'women' => [
+                'Womens Clothing Bundle',
+                'Quality Womens Jacket',
+                'Womens Casual Clothing',
+                'Near New Womens Clothing',
+                'Womens Wardrobe Clearout',
+            ],
+            'kids' => [
+                'Kids Clothing Bundle',
+                'Childrens Clothes - Great Condition',
+                'Kids Wardrobe Clearout',
+                'Quality Childrens Clothing',
+                'Mixed Kids Clothing Bundle',
+            ],
+            'shoes' => [
+                'Quality Shoes in Great Condition',
+                'Near New Sneakers',
+                'Comfortable Everyday Shoes',
+                'Designer Style Shoes',
+                'Shoes - Barely Worn',
+            ],
+
+            'outdoor' => [
+                'Camping Equipment Bundle',
+                'Quality Outdoor Gear',
+                'Camping Setup - Ready to Go',
+                'Outdoor Adventure Equipment',
+                'Camping and Hiking Gear',
+            ],
+            'fitness' => [
+                'Home Gym Equipment',
+                'Adjustable Dumbbell Set',
+                'Fitness Equipment Bundle',
+                'Exercise Bike in Great Condition',
+                'Home Workout Equipment',
+            ],
+            'team sports' => [
+                'Sports Equipment Bundle',
+                'Football Training Gear',
+                'Team Sports Equipment',
+                'Quality Sporting Equipment',
+                'Sports Gear - Great Condition',
+            ],
+
+            'full time' => [
+                'IT Support Technician - Full Time',
+                'Administration Officer - Full Time',
+                'Customer Service Representative',
+                'Warehouse Team Member - Full Time',
+                'Experienced Tradesperson Wanted',
+            ],
+            'part time' => [
+                'Part Time Administration Assistant',
+                'Part Time Customer Service Role',
+                'Weekend Retail Team Member',
+                'Part Time Warehouse Assistant',
+                'Flexible Part Time Position',
+            ],
+            'freelance' => [
+                'Freelance Web Designer Required',
+                'Contract IT Support Technician',
+                'Freelance Graphic Designer',
+                'Short Term Administration Contract',
+                'Independent Tradesperson Required',
+            ],
+
+            'cleaning' => [
+                'Experienced House Cleaner',
+                'Regular Home Cleaning Service',
+                'End of Lease Cleaning',
+                'Office Cleaning Service',
+                'Reliable Local Cleaner',
+            ],
+            'repair' => [
+                'Home Repair and Maintenance Service',
+                'Computer and Technology Repairs',
+                'General Handyman Service',
+                'Appliance Repair Service',
+                'Local Repair and Maintenance',
+            ],
+            'education' => [
+                'Private Tutoring Available',
+                'Maths and English Tutoring',
+                'Computer Lessons and Support',
+                'Experienced Local Tutor',
+                'One-on-One Learning Support',
+            ],
+
+            default => [
+                'Great Item - Ready for a New Home',
+                'Quality Item in Good Condition',
+                'Well Maintained Item',
+                'Great Value Local Listing',
+                'Item Available for Pickup',
+            ],
+        };
+
+        return $titles[$index % count($titles)];
     }
 
     private function buildDescription(Category $category, string $city, string $country, User $user): string
