@@ -197,6 +197,12 @@
     cursor: pointer;
 }
 
+.upload__control > svg {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+}
+
 .upload__control:hover {
     border-color: var(--accent);
 }

@@ -11,13 +11,14 @@ RUN apk add --no-cache \
     libpng-dev \
     libjpeg-turbo-dev \
     freetype-dev \
+    libwebp-dev \
     oniguruma-dev \
     libxml2-dev \
     icu-dev \
     libzip-dev \
     postgresql-dev \
     $PHPIZE_DEPS \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd opcache intl zip \
     && pecl install redis \
     && docker-php-ext-enable redis
@@ -27,7 +28,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 COPY composer.json composer.lock* ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+RUN git config --global http.version HTTP/1.1 \
+    && composer install --no-dev --no-scripts --no-autoloader --prefer-source --no-interaction --no-progress
 
 COPY . .
 
@@ -36,6 +38,7 @@ RUN composer dump-autoload --optimize \
     && npm run build
 
 COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
 COPY docker/start.sh /start.sh
 RUN chmod +x /start.sh
 

@@ -684,11 +684,18 @@ class Listing extends Model implements HasMedia
             'expires_at',
         ]);
 
-        $payload['user_id'] = $userId;
         $payload['currency'] = ListingPanelHelper::normalizeCurrency($data['currency'] ?? null);
-        $payload['slug'] = $slug;
 
         $listing = static::query()->make($payload);
+
+        // These values are generated internally and intentionally are not
+        // mass assignable from frontend input.
+        $listing->setAttribute('slug', $slug);
+        $listing->setAttribute('user_id', $userId);
+
+        // Listings submitted by members require review before becoming public.
+        $listing->setAttribute('status', 'pending');
+
         $listing->save();
 
         return $listing;

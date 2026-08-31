@@ -10,53 +10,53 @@ use Illuminate\Support\Str;
 use Modules\Category\Models\Category;
 use Modules\Listing\Models\Listing;
 use Modules\Listing\Support\SampleListingImageCatalog;
-use Modules\Location\Models\City;
 use Modules\User\App\Models\User;
 use Modules\User\App\Support\DemoUserCatalog;
 
 class ListingSeeder extends Seeder
 {
-    private const TITLE_PREFIXES = [
-        'Clean',
-        'Lightly used',
-        'Special offer',
-        'Well priced',
-        'Owner listed',
-        'Must-see',
-        'Well kept',
-    ];
-
     private const MAX_DEMO_LISTINGS = 120;
 
     public function run(): void
     {
         $users = $this->resolveSeederUsers();
         $categories = $this->resolveSeedableCategories();
-        $imagePool = SampleListingImageCatalog::uniquePaths();
 
-        if ($users->isEmpty() || $categories->isEmpty() || $imagePool->isEmpty()) {
+        if ($users->isEmpty() || $categories->isEmpty()) {
             return;
         }
+
         $plannedSlugs = [];
-        $assignedImageIndex = 0;
+        $listingIndex = 0;
 
         foreach ($categories as $category) {
-            foreach ($users as $user) {
-                if ($assignedImageIndex >= self::MAX_DEMO_LISTINGS) {
-                    break 2;
-                }
-
-                $listingData = $this->buildListingData(
-                    $category,
-                    $assignedImageIndex,
-                    $user,
-                    $imagePool->get($assignedImageIndex % $imagePool->count())
-                );
-                $listing = $this->upsertListing($listingData, $category, $user);
-                $plannedSlugs[] = $listing->slug;
-                $this->syncListingImage($listing, $listingData['image_path']);
-                $assignedImageIndex++;
+            if ($listingIndex >= self::MAX_DEMO_LISTINGS) {
+                break;
             }
+
+            $user = $users->get($listingIndex % $users->count());
+
+            if (! $user instanceof User) {
+                continue;
+            }
+
+            $listingData = $this->buildListingData(
+                $category,
+                $listingIndex,
+                $user,
+                SampleListingImageCatalog::pathFor($category, $listingIndex)
+            );
+
+            $listing = $this->upsertListing($listingData, $category, $user);
+
+            $plannedSlugs[] = $listing->slug;
+
+            $this->syncListingImage(
+                $listing,
+                $listingData['image_path']
+            );
+
+            $listingIndex++;
         }
 
         Listing::query()
@@ -79,29 +79,67 @@ class ListingSeeder extends Seeder
             ->values();
     }
 
+    /**
+     * Return leaf categories in a balanced order.
+     *
+     * Instead of exhausting Electronics, Appliances, Furniture, etc. before
+     * reaching later categories, take the first child from every parent,
+     * then the second child from every parent, and so on.
+     */
     private function resolveSeedableCategories(): Collection
     {
         $leafCategories = Category::query()
             ->where('is_active', true)
-            ->whereDoesntHave('children')
-            ->with('parent:id,name')
-            ->orderBy('sort_order')
-            ->orderBy('name')
+            ->whereDoesntHave('children', function ($query): void {
+                $query->where('is_active', true);
+            })
+            ->with('parent:id,name,slug,sort_order')
             ->get();
 
-        if ($leafCategories->isNotEmpty()) {
-            return $leafCategories->values();
+        if ($leafCategories->isEmpty()) {
+            return Category::query()
+                ->where('is_active', true)
+                ->with('parent:id,name,slug,sort_order')
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get()
+                ->values();
         }
 
-        return Category::query()
-            ->where('is_active', true)
-            ->with('parent:id,name')
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get()
-            ->values();
-    }
+        $families = $leafCategories
+            ->groupBy(fn (Category $category): string => (string) ($category->parent_id ?? $category->id))
+            ->sortBy(function (Collection $family): int {
+                $first = $family->first();
 
+                if (! $first instanceof Category) {
+                    return PHP_INT_MAX;
+                }
+
+                return (int) ($first->parent?->sort_order ?? $first->sort_order);
+            })
+            ->values()
+            ->map(
+                fn (Collection $family): Collection => $family
+                    ->sortBy([
+                        ['sort_order', 'asc'],
+                        ['name', 'asc'],
+                    ])
+                    ->values()
+            );
+
+        $maxChildren = (int) ($families->map->count()->max() ?? 0);
+        $balanced = collect();
+
+        for ($childIndex = 0; $childIndex < $maxChildren; $childIndex++) {
+            foreach ($families as $family) {
+                if ($family->has($childIndex)) {
+                    $balanced->push($family->get($childIndex));
+                }
+            }
+        }
+
+        return $balanced->values();
+    }
 
     private function buildListingData(
         Category $category,
@@ -116,7 +154,12 @@ class ListingSeeder extends Seeder
         return [
             'slug' => $slug,
             'title' => $title,
-            'description' => $this->buildDescription($category, $location['city'], $location['country'], $user),
+            'description' => $this->buildDescription(
+                $category,
+                $location['city'],
+                $location['country'],
+                $user
+            ),
             'price' => $this->priceForCategory($category, $index),
             'city' => $location['city'],
             'country' => $location['country'],
@@ -165,272 +208,448 @@ class ListingSeeder extends Seeder
         $name = strtolower(trim((string) $category->name));
 
         $titles = match ($name) {
-            'phones' => [
-                'Unlocked Smartphone in Excellent Condition',
-                'iPhone with Charger and Case',
-                'Android Phone - Great Everyday Mobile',
-                'Near New Smartphone',
-                'Budget Smartphone - Works Perfectly',
+            'computers & laptops' => [
+                'Laptop in Great Working Condition',
+                'Desktop Computer Ready to Use',
+                'Laptop with Charger',
             ],
-            'computers' => [
-                'Gaming Desktop PC',
-                'Fast Home and Office Computer',
-                'Desktop PC with Monitor',
-                'Compact Computer - Ready to Use',
-                'High Performance Workstation',
+            'tablets & ipads' => [
+                'iPad in Great Condition',
+                'Tablet with Case and Charger',
+                'Tablet Ready for a New Home',
             ],
-            'tablets' => [
-                'Tablet in Excellent Condition',
-                'iPad with Protective Case',
-                'Android Tablet - Great for Home',
-                'Lightweight Tablet with Charger',
-                'Family Tablet - Ready to Use',
+            'mobile phones' => [
+                'Unlocked Smartphone with Charger',
+                'iPhone in Great Condition',
+                'Android Phone Ready to Use',
             ],
-            'tvs' => [
-                'Smart TV in Excellent Condition',
-                'Large Screen 4K Television',
+            'tvs & projectors' => [
                 'Smart TV with Remote',
-                'LED Television - Works Perfectly',
-                'Quality TV - Great Picture',
+                '4K Television in Great Condition',
+                'Projector Ready for Movie Nights',
+            ],
+            'sound systems & speakers' => [
+                'Bluetooth Speaker in Great Condition',
+                'Home Sound System',
+                'Quality Speakers Ready to Go',
+            ],
+            'headphones' => [
+                'Wireless Headphones',
+                'Noise Cancelling Headphones',
+                'Headphones in Great Condition',
+            ],
+            'cameras & photography' => [
+                'Digital Camera with Accessories',
+                'Camera Gear Bundle',
+                'Photography Equipment in Great Condition',
+            ],
+            'networking & wi-fi equipment' => [
+                'Wi-Fi Router in Great Condition',
+                'Network Equipment Bundle',
+                'Wireless Access Point',
             ],
 
-            'cars' => [
-                'Reliable Automatic Hatchback',
-                'Well Maintained Family Sedan',
-                'Low Kilometre SUV',
-                'Economical Daily Driver',
-                'Late Model Family Car',
-            ],
-            'motorcycles' => [
-                'Learner Approved Motorcycle',
-                'Well Maintained Road Bike',
-                'Low Kilometre Motorcycle',
-                'Weekend Cruiser',
-                'Reliable Commuter Motorcycle',
-            ],
-            'trucks' => [
-                'Reliable Work Truck',
-                'Well Maintained Light Truck',
-                'Commercial Truck Ready for Work',
-                'Tipper Truck in Good Condition',
-                'Low Kilometre Delivery Truck',
-            ],
-            'boats' => [
-                'Fishing Boat with Trailer',
-                'Family Runabout',
-                'Weekend Fishing Boat',
-                'Boat and Trailer Package',
-                'Well Maintained Recreational Boat',
-            ],
-
-            'for sale' => [
-                'Family Home in Great Location',
-                'Modern Home with Plenty of Space',
-                'Well Presented Three Bedroom Home',
-                'Spacious Family Property',
-                'Move-In Ready Home',
-            ],
-            'for rent' => [
-                'Modern Home for Rent',
-                'Two Bedroom Unit Available',
-                'Family Home Available Now',
-                'Well Located Rental Property',
-                'Spacious Apartment for Rent',
-            ],
-            'commercial' => [
-                'Commercial Property Opportunity',
-                'Office Space in Convenient Location',
-                'Retail Premises for Sale',
-                'Commercial Investment Property',
-                'Warehouse and Office Facility',
-            ],
-
-            'furniture' => [
-                'Solid Timber Dining Table',
-                'Comfortable Lounge Suite',
-                'Bedroom Furniture Set',
-                'Modern Storage Cabinet',
-                'Outdoor Dining Setting',
-            ],
-            'garden' => [
-                'Garden Tools and Equipment',
-                'Outdoor Planter and Garden Set',
-                'Lawn Mower in Good Condition',
-                'Outdoor Garden Furniture',
-                'Garden Equipment Bundle',
-            ],
-            'appliances' => [
+            'fridges & freezers' => [
                 'Fridge in Excellent Working Order',
+                'Clean Fridge Freezer',
+                'Freezer in Great Working Condition',
+            ],
+            'washing machines & dryers' => [
                 'Front Load Washing Machine',
+                'Washing Machine in Great Condition',
+                'Clothes Dryer in Working Order',
+            ],
+            'dishwashers' => [
+                'Dishwasher in Great Working Order',
+                'Clean Dishwasher Ready for Pickup',
+            ],
+            'ovens & cooktops' => [
+                'Electric Oven in Working Order',
+                'Cooktop in Great Condition',
+            ],
+            'microwaves' => [
                 'Microwave in Great Condition',
-                'Quality Dishwasher',
-                'Kitchen Appliance Bundle',
+                'Clean Microwave Ready to Use',
+            ],
+            'coffee machines' => [
+                'Coffee Machine in Great Condition',
+                'Coffee Maker Ready to Use',
             ],
 
-            'men' => [
-                'Mens Clothing Bundle',
-                'Quality Mens Jacket',
-                'Mens Casual Clothing',
-                'Near New Mens Clothing',
-                'Mens Wardrobe Clearout',
+            'sofas & lounge furniture' => [
+                'Comfortable Lounge Suite',
+                'Sofa in Great Condition',
+                'Lounge Clearing Out',
             ],
-            'women' => [
-                'Womens Clothing Bundle',
-                'Quality Womens Jacket',
-                'Womens Casual Clothing',
-                'Near New Womens Clothing',
-                'Womens Wardrobe Clearout',
+            'beds & bedroom furniture' => [
+                'Bedroom Furniture Set',
+                'Bed Frame in Great Condition',
+                'Bedroom Furniture Clearing Out',
             ],
-            'kids' => [
-                'Kids Clothing Bundle',
-                'Childrens Clothes - Great Condition',
-                'Kids Wardrobe Clearout',
-                'Quality Childrens Clothing',
-                'Mixed Kids Clothing Bundle',
+            'tables & chairs' => [
+                'Solid Timber Dining Table',
+                'Table and Chairs Set',
+                'Dining Setting in Great Condition',
+            ],
+            'cabinets & storage' => [
+                'Storage Cabinet in Great Condition',
+                'Cabinet Ready for Pickup',
+            ],
+
+            'timber' => [
+                'Leftover Timber from Renovation',
+                'Building Timber - Surplus to Needs',
+            ],
+            'tiles' => [
+                'Leftover Floor Tiles',
+                'Surplus Tiles from Renovation',
+                'Unused Tiles - Multiple Boxes',
+            ],
+            'bricks & blocks' => [
+                'Leftover Bricks - Surplus to Needs',
+                'Building Blocks Available',
+            ],
+            'roofing materials' => [
+                'Leftover Roofing Materials',
+                'Surplus Roofing Sheets',
+            ],
+            'doors' => [
+                'Door in Great Condition',
+                'Unused Door from Renovation',
+            ],
+            'windows' => [
+                'Window from Renovation',
+                'Unused Window Ready for Pickup',
+            ],
+            'flooring' => [
+                'Leftover Flooring from Renovation',
+                'Surplus Flooring Materials',
+            ],
+            'fencing & gates' => [
+                'Leftover Fencing Materials',
+                'Gate in Great Condition',
+            ],
+            'cabinets & benchtops' => [
+                'Kitchen Cabinets from Renovation',
+                'Benchtop Surplus to Needs',
+            ],
+
+            'corded power tools' => [
+                'Corded Power Tool in Great Condition',
+                'Power Tool Ready for Work',
+            ],
+            'cordless & battery tools' => [
+                'Cordless Power Tool with Battery',
+                'Battery Tool in Great Condition',
+            ],
+            'hand tools' => [
+                'Hand Tool Bundle',
+                'Quality Hand Tools',
+            ],
+            'toolboxes & storage' => [
+                'Toolbox in Great Condition',
+                'Workshop Tool Storage',
+            ],
+            'workshop equipment' => [
+                'Workshop Equipment Clearing Out',
+                'Garage Workshop Equipment',
+            ],
+            'welding equipment' => [
+                'Welding Equipment in Great Condition',
+                'Welder Ready for Work',
+            ],
+
+            'car parts' => [
+                'Car Parts Clearing Out',
+                'Spare Car Parts',
+            ],
+            'motorcycle parts' => [
+                'Motorcycle Parts Clearing Out',
+                'Spare Motorcycle Parts',
+            ],
+            '4wd parts & accessories' => [
+                '4WD Accessories Clearing Out',
+                '4WD Parts and Accessories',
+            ],
+            'wheels & tyres' => [
+                'Set of Wheels and Tyres',
+                'Wheels in Great Condition',
+            ],
+            'roof racks & tow bars' => [
+                'Roof Rack in Great Condition',
+                'Tow Bar Ready for Pickup',
+            ],
+
+            'plants & pots' => [
+                'Garden Plants and Pots',
+                'Potted Plants Clearing Out',
+            ],
+            'bbqs & outdoor cooking' => [
+                'BBQ in Great Condition',
+                'Outdoor BBQ Ready to Use',
+            ],
+            'lawn mowers' => [
+                'Lawn Mower in Good Working Order',
+                'Mower Ready for the Weekend',
+            ],
+
+            'gym & fitness equipment' => [
+                'Home Gym Equipment',
+                'Fitness Equipment Clearing Out',
+            ],
+            'bikes & cycling' => [
+                'Bike in Great Condition',
+                'Quality Bicycle Ready to Ride',
+            ],
+            'golf' => [
+                'Golf Club Set',
+                'Golf Gear Clearing Out',
+            ],
+            'fishing' => [
+                'Fishing Gear Bundle',
+                'Fishing Equipment Clearing Out',
+            ],
+
+            "men's clothing" => [
+                "Men's Clothing Bundle",
+                "Men's Wardrobe Clearout",
+            ],
+            "women's clothing" => [
+                "Women's Clothing Bundle",
+                "Women's Wardrobe Clearout",
+            ],
+            "kids' clothing" => [
+                "Kids' Clothing Bundle",
+                "Kids' Wardrobe Clearout",
             ],
             'shoes' => [
-                'Quality Shoes in Great Condition',
-                'Near New Sneakers',
-                'Comfortable Everyday Shoes',
-                'Designer Style Shoes',
-                'Shoes - Barely Worn',
+                'Shoes in Great Condition',
+                'Near New Shoes',
             ],
 
-            'outdoor' => [
-                'Camping Equipment Bundle',
-                'Quality Outdoor Gear',
-                'Camping Setup - Ready to Go',
-                'Outdoor Adventure Equipment',
-                'Camping and Hiking Gear',
+            'toys' => [
+                'Kids Toy Bundle',
+                'Toys Clearing Out',
             ],
-            'fitness' => [
-                'Home Gym Equipment',
-                'Adjustable Dumbbell Set',
-                'Fitness Equipment Bundle',
-                'Exercise Bike in Great Condition',
-                'Home Workout Equipment',
+            'baby equipment' => [
+                'Baby Equipment Bundle',
+                'Baby Gear in Great Condition',
             ],
-            'team sports' => [
-                'Sports Equipment Bundle',
-                'Football Training Gear',
-                'Team Sports Equipment',
-                'Quality Sporting Equipment',
-                'Sports Gear - Great Condition',
+            'prams & strollers' => [
+                'Pram in Great Condition',
+                'Baby Stroller Ready to Use',
             ],
 
-            'full time' => [
-                'IT Support Technician - Full Time',
-                'Administration Officer - Full Time',
-                'Customer Service Representative',
-                'Warehouse Team Member - Full Time',
-                'Experienced Tradesperson Wanted',
+            'gaming consoles' => [
+                'Gaming Console with Controller',
+                'Console in Great Condition',
             ],
-            'part time' => [
-                'Part Time Administration Assistant',
-                'Part Time Customer Service Role',
-                'Weekend Retail Team Member',
-                'Part Time Warehouse Assistant',
-                'Flexible Part Time Position',
+            'video games' => [
+                'Video Game Bundle',
+                'Games Collection Clearing Out',
             ],
-            'freelance' => [
-                'Freelance Web Designer Required',
-                'Contract IT Support Technician',
-                'Freelance Graphic Designer',
-                'Short Term Administration Contract',
-                'Independent Tradesperson Required',
+            'board games' => [
+                'Board Game Bundle',
+                'Family Board Games',
             ],
 
-            'cleaning' => [
-                'Experienced House Cleaner',
-                'Regular Home Cleaning Service',
-                'End of Lease Cleaning',
-                'Office Cleaning Service',
-                'Reliable Local Cleaner',
+            'coins & banknotes' => [
+                'Coin Collection',
+                'Collectable Coins',
             ],
-            'repair' => [
-                'Home Repair and Maintenance Service',
-                'Computer and Technology Repairs',
-                'General Handyman Service',
-                'Appliance Repair Service',
-                'Local Repair and Maintenance',
+            'trading cards' => [
+                'Trading Card Collection',
+                'Collectable Cards Bundle',
             ],
-            'education' => [
-                'Private Tutoring Available',
-                'Maths and English Tutoring',
-                'Computer Lessons and Support',
-                'Experienced Local Tutor',
-                'One-on-One Learning Support',
+            'sports memorabilia' => [
+                'Sports Memorabilia Collection',
+                'Collectable Sporting Item',
+            ],
+
+            'antique furniture' => [
+                'Antique Furniture Piece',
+                'Vintage Furniture in Great Condition',
+            ],
+            'ceramics & glassware' => [
+                'Vintage Ceramics Collection',
+                'Antique Glassware',
+            ],
+
+            'books' => [
+                'Book Collection Clearing Out',
+                'Box of Books',
+            ],
+            'textbooks' => [
+                'Textbook Bundle',
+                'Study Books Clearing Out',
+            ],
+            'vinyl records' => [
+                'Vinyl Record Collection',
+                'Records Clearing Out',
+            ],
+
+            'desks' => [
+                'Office Desk in Great Condition',
+                'Desk Ready for Pickup',
+            ],
+            'office chairs' => [
+                'Office Chair in Great Condition',
+                'Ergonomic Office Chair',
+            ],
+            'shelving' => [
+                'Office Shelving',
+                'Storage Shelves Ready for Pickup',
+            ],
+            'filing cabinets' => [
+                'Filing Cabinet in Great Condition',
+                'Office Filing Cabinet',
+            ],
+
+            'model kits' => [
+                'Model Kit Collection',
+                'Model Kits Clearing Out',
+            ],
+            'rc cars, boats & aircraft' => [
+                'RC Hobby Gear',
+                'Remote Control Collection',
+            ],
+            'art supplies' => [
+                'Art Supplies Bundle',
+                'Art Materials Clearing Out',
+            ],
+            'sewing & fabric' => [
+                'Sewing and Fabric Bundle',
+                'Craft Fabric Clearing Out',
+            ],
+            'musical instruments' => [
+                'Musical Instrument in Great Condition',
+                'Music Gear Clearing Out',
+            ],
+
+            'beds & bedding' => [
+                'Pet Bed in Great Condition',
+                'Pet Bedding and Accessories',
+            ],
+            'crates, cages & carriers' => [
+                'Pet Carrier in Great Condition',
+                'Pet Crate Ready to Use',
+            ],
+            'aquariums & fish tanks' => [
+                'Glass Aquarium with Stand',
+                'Fish Tank in Great Condition',
+            ],
+            'pet furniture & scratchers' => [
+                'Cat Scratching Tower',
+                'Pet Furniture in Great Condition',
+            ],
+            'enclosures & kennels' => [
+                'Pet Kennel in Great Condition',
+                'Outdoor Pet Enclosure',
+            ],
+
+            'free furniture' => [
+                'Free Furniture - Pickup Only',
+                'Free Furniture - Must Go',
+            ],
+            'free building materials' => [
+                'Free Leftover Building Materials',
+                'Free Renovation Materials - Pickup Only',
+            ],
+            'free garden items' => [
+                'Free Garden Items - Pickup Only',
+                'Free Garden Supplies',
+            ],
+            'free appliances' => [
+                'Free Appliance - Pickup Only',
+                'Free Appliance - Must Go',
+            ],
+            'free electronics' => [
+                'Free Electronics - Pickup Only',
+                'Free Electronic Items',
+            ],
+            'moving boxes' => [
+                'Free Moving Boxes',
+                'Moving Boxes - Free Pickup',
+            ],
+            'scrap & reusable materials' => [
+                'Free Reusable Materials',
+                'Free Scrap and Leftover Materials',
             ],
 
             default => [
-                'Great Item - Ready for a New Home',
-                'Quality Item in Good Condition',
-                'Well Maintained Item',
-                'Great Value Local Listing',
-                'Item Available for Pickup',
+                trim((string) $category->name).' - Good Condition',
+                trim((string) $category->name).' - Clearing Out',
+                trim((string) $category->name).' - Ready for Pickup',
+                trim((string) $category->name).' - Priced to Sell',
             ],
         };
 
         return $titles[$index % count($titles)];
     }
 
-    private function buildDescription(Category $category, string $city, string $country, User $user): string
-    {
+    private function buildDescription(
+        Category $category,
+        string $city,
+        string $country,
+        User $user
+    ): string {
         $categoryName = trim((string) $category->name);
         $location = trim(collect([$city, $country])->filter()->join(', '));
+        $sellerName = trim((string) $user->name);
+
+        $isFree = $category->parent?->slug === 'free-stuff';
+
+        if ($isFree) {
+            return sprintf(
+                '%s available free to a new home. Located in %s. Message %s through Sell My Junk for more details or to arrange pickup.',
+                $categoryName !== '' ? $categoryName : 'Item',
+                $location !== '' ? $location : 'Australia',
+                $sellerName !== '' ? $sellerName : 'the seller'
+            );
+        }
 
         return sprintf(
-            '%s listed by %s. Clean demo condition, sample product photo assigned from the provided catalog, and ready for browsing, favorites, inbox, and panel testing. Pickup area: %s.',
+            '%s available in %s. Clearing out some space and would rather see it reused than thrown away. Message %s through Sell My Junk for more details or to arrange pickup.',
             $categoryName !== '' ? $categoryName : 'Item',
-            trim((string) $user->name) !== '' ? trim((string) $user->name) : 'a marketplace user',
-            $location !== '' ? $location : 'Australia'
+            $location !== '' ? $location : 'Australia',
+            $sellerName !== '' ? $sellerName : 'the seller'
         );
     }
 
     private function priceForCategory(Category $category, int $index): int
     {
-        $name = strtolower(trim((string) $category->name));
+        $parentSlug = strtolower(trim((string) ($category->parent?->slug ?? $category->slug)));
 
-        $prices = match ($name) {
-            'phones' => [120, 250, 450, 700, 950, 1200],
-            'computers' => [250, 450, 700, 1200, 1800, 2500],
-            'tablets' => [120, 250, 400, 650, 900, 1200],
-            'tvs' => [100, 250, 450, 700, 1200, 1800],
-
-            'cars' => [3500, 6500, 9500, 14500, 22000, 32000],
-            'motorcycles' => [1800, 3500, 5500, 8500, 12000, 18000],
-            'trucks' => [9000, 15000, 24000, 35000, 50000, 75000],
-            'boats' => [2500, 5000, 9000, 15000, 25000, 35000],
-
-            'for sale' => [450000, 550000, 650000, 750000, 900000, 1200000],
-            'for rent' => [350, 450, 550, 650, 750, 900],
-            'commercial' => [300000, 450000, 600000, 800000, 1100000, 1500000],
-
-            'furniture' => [20, 80, 150, 300, 600, 1200],
-            'garden' => [20, 60, 120, 250, 500, 1000],
-            'appliances' => [50, 150, 300, 500, 800, 1400],
-
-            'men', 'women', 'kids' => [10, 30, 60, 120, 200, 350],
-            'shoes' => [20, 50, 80, 130, 200, 300],
-
-            'outdoor', 'fitness', 'team sports' => [20, 70, 150, 300, 600, 1200],
-
-            'full time' => [55000, 65000, 75000, 85000, 95000, 110000],
-            'part time' => [25000, 35000, 45000, 55000, 65000, 75000],
-            'freelance' => [300, 600, 1200, 2500, 5000, 8000],
-
-            'cleaning' => [80, 120, 160, 220, 300, 400],
-            'repair' => [100, 180, 250, 350, 500, 700],
-            'education' => [40, 60, 80, 100, 130, 160],
-
-            default => [20, 50, 100, 250, 500, 1000],
+        $prices = match ($parentSlug) {
+            'electronics' => [20, 50, 100, 180, 300, 650, 1200],
+            'appliances' => [20, 50, 100, 200, 350, 600, 900],
+            'furniture-homewares' => [10, 30, 60, 120, 250, 450, 800],
+            'excess-building-materials' => [5, 20, 50, 100, 200, 400, 800],
+            'tools-diy' => [10, 30, 60, 120, 250, 450, 900],
+            'automotive-parts-accessories' => [10, 40, 100, 250, 500, 1000, 2500],
+            'garden-outdoor' => [5, 20, 50, 100, 200, 400, 750],
+            'sports' => [10, 30, 70, 150, 300, 600, 1000],
+            'fashion' => [5, 15, 30, 60, 120, 250, 500],
+            'toys-kids-baby' => [5, 15, 30, 60, 120, 250, 500],
+            'games-gaming' => [5, 15, 30, 60, 150, 300, 600],
+            'collectables' => [5, 20, 50, 100, 250, 600, 1500],
+            'antiques' => [20, 50, 100, 250, 500, 1000, 2500],
+            'books-media' => [2, 5, 10, 20, 40, 80, 150],
+            'office-business-equipment' => [10, 30, 80, 150, 300, 600, 1200],
+            'hobbies-crafts' => [5, 20, 50, 100, 250, 500, 1000],
+            'pet-supplies' => [5, 15, 30, 60, 120, 250, 500],
+            'free-stuff' => [0],
+            default => [5, 20, 50, 100, 250, 500, 1000],
         };
 
         return $prices[$index % count($prices)];
     }
 
-    private function upsertListing(array $data, Category $category, User $user): Listing
-    {
+    private function upsertListing(
+        array $data,
+        Category $category,
+        User $user
+    ): Listing {
         $listing = Listing::updateOrCreate(
             ['slug' => $data['slug']],
             [
@@ -453,6 +672,7 @@ class ListingSeeder extends Seeder
             'status' => 'active',
             'is_featured' => $data['is_featured'],
         ]);
+
         $listing->save();
 
         $listing->forceFill([
@@ -463,15 +683,24 @@ class ListingSeeder extends Seeder
         return $listing;
     }
 
-    private function syncListingImage(Listing $listing, ?string $imageAbsolutePath): void
-    {
+    private function syncListingImage(
+        Listing $listing,
+        ?string $imageAbsolutePath
+    ): void {
         if (! is_string($imageAbsolutePath) || ! is_file($imageAbsolutePath)) {
+            // Prevent an old demo image surviving when the new category has
+            // no suitable sample image.
+            $listing->clearMediaCollection('listing-images');
+
             return;
         }
 
         $listing->replacePublicImage(
             $imageAbsolutePath,
-            SampleListingImageCatalog::fileNameFor($imageAbsolutePath, $listing->slug)
+            SampleListingImageCatalog::fileNameFor(
+                $imageAbsolutePath,
+                $listing->slug
+            )
         );
     }
 }
