@@ -29,4 +29,20 @@ class District extends Model
     {
         return $this->belongsTo(City::class);
     }
+
+    public static function quickCreateOptions(): array
+    {
+        return static::query()
+            ->where('is_active', true)
+            ->with('city:id,name,country_id')
+            ->orderBy('name')
+            ->get(['id', 'name', 'city_id'])
+            ->map(fn (self $district): array => [
+                'id' => (int) $district->id,
+                'name' => (string) $district->name,
+                'city_id' => (int) $district->city_id,
+                'city_name' => (string) ($district->city?->name ?? ''),
+            ])
+            ->all();
+    }
 }

@@ -161,33 +161,40 @@
                             @error('description')<p class="field__error">{{ $message }}</p>@enderror
                         </div>
 
-                        <div class="field__row field__row--three">
-                            <div class="field">
-                                <label class="field__label" for="listing-price">{{ __('panel::messages.price') }}</label>
-                                <input id="listing-price" type="number" step="0.01" min="0" class="input" wire:model.blur="price">
-                                @error('price')<p class="field__error">{{ $message }}</p>@enderror
-                            </div>
+                        <div class="field__row {{ $this->isFreeStuff ? 'field__row--two' : 'field__row--three' }}">
+                            @unless($this->isFreeStuff)
+                                <div class="field">
+                                    <label class="field__label" for="listing-price">{{ __('panel::messages.price') }}</label>
+                                    <input id="listing-price" type="number" step="0.01" min="0.01" class="input" wire:model.blur="price">
+                                    @error('price')<p class="field__error">{{ $message }}</p>@enderror
+                                </div>
+                            @endunless
 
                             <div class="field">
-                                <label class="field__label" for="listing-country">{{ __('site::messages.country') }}</label>
-                                <select id="listing-country" class="select" wire:model.live="selectedCountryId">
-                                    <option value="">{{ __('site::messages.all_countries') }}</option>
-                                    @foreach($countries as $country)
-                                        <option value="{{ $country['id'] }}">{{ $country['name'] }}</option>
-                                    @endforeach
-                                </select>
-                                @error('selectedCountryId')<p class="field__error">{{ $message }}</p>@enderror
-                            </div>
-
-                            <div class="field">
-                                <label class="field__label" for="listing-city">{{ __('site::messages.city') }}</label>
-                                <select id="listing-city" class="select" wire:model="selectedCityId" @disabled($this->availableCities === [])>
-                                    <option value="">{{ __('site::messages.all_cities') }}</option>
+                                <label class="field__label" for="listing-city">City</label>
+                                <select id="listing-city" class="select" wire:model.live="selectedCityId">
+                                    <option value="">Select city</option>
                                     @foreach($this->availableCities as $city)
                                         <option value="{{ $city['id'] }}">{{ $city['name'] }}</option>
                                     @endforeach
                                 </select>
                                 @error('selectedCityId')<p class="field__error">{{ $message }}</p>@enderror
+                            </div>
+
+                            <div class="field">
+                                <label class="field__label" for="listing-suburb">Suburb / Area</label>
+                                <select
+                                    id="listing-suburb"
+                                    class="select"
+                                    wire:model.live="selectedDistrictId"
+                                    @disabled($this->availableDistricts === [])
+                                >
+                                    <option value="">Select suburb / area</option>
+                                    @foreach($this->availableDistricts as $district)
+                                        <option value="{{ $district['id'] }}">{{ $district['name'] }}</option>
+                                    @endforeach
+                                </select>
+                                @error('selectedDistrictId')<p class="field__error">{{ $message }}</p>@enderror
                             </div>
                         </div>
 
@@ -245,7 +252,7 @@
                             </div>
                             <div class="spec-list__row">
                                 <dt class="spec-list__label">{{ __('panel::messages.location') }}</dt>
-                                <dd class="spec-list__value">{{ $this->selectedCityName }} {{ $this->selectedCountryName }}</dd>
+                                <dd class="spec-list__value">{{ collect([$this->selectedDistrictName, $this->selectedCityName, $this->selectedCountryName])->filter()->implode(', ') }}</dd>
                             </div>
                         </dl>
 

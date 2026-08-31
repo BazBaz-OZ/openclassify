@@ -144,6 +144,14 @@ class Listing extends Model implements HasMedia
         return $query->with('category:id,name');
     }
 
+    public function scopeWithListingCardRelations(Builder $query): Builder
+    {
+        return $query->with([
+            'category:id,name,parent_id,icon',
+            'category.parent:id,name,icon',
+        ]);
+    }
+
     public function scopeForCategory(Builder $query, ?int $categoryId): Builder
     {
         return $query->forCategoryIds(Category::listingFilterIds($categoryId));
@@ -257,7 +265,8 @@ class Listing extends Model implements HasMedia
     {
         $baseQuery = static::query()
             ->publicFeed()
-            ->with(['category:id,name', 'videos'])
+            ->withListingCardRelations()
+            ->with('videos')
             ->whereKeyNot($this->getKey());
 
         $primary = (clone $baseQuery)
@@ -365,6 +374,7 @@ class Listing extends Model implements HasMedia
     {
         return static::query()
             ->active()
+            ->withListingCardRelations()
             ->where('is_featured', true)
             ->latest()
             ->take($limit)
@@ -375,6 +385,7 @@ class Listing extends Model implements HasMedia
     {
         return static::query()
             ->active()
+            ->withListingCardRelations()
             ->latest()
             ->take($limit)
             ->get();
@@ -416,7 +427,11 @@ class Listing extends Model implements HasMedia
             return 'Free';
         }
 
-        return number_format((float) $this->price, 2, ',', '.').' '.($this->currency ?? 'TL');
+        if ((float) $this->price <= 0) {
+            return 'FREE';
+        }
+
+        return number_format((float) $this->price, 2, '.', ',').' '.($this->currency ?? 'AUD');
     }
 
     public function panelStatusMeta(): array
@@ -693,8 +708,9 @@ class Listing extends Model implements HasMedia
         $listing->setAttribute('slug', $slug);
         $listing->setAttribute('user_id', $userId);
 
-        // Listings submitted by members require review before becoming public.
-        $listing->setAttribute('status', 'pending');
+        // Member listings are published immediately by default.
+        // Status is still set internally so frontend input cannot override it.
+        $listing->setAttribute('status', 'active');
 
         $listing->save();
 

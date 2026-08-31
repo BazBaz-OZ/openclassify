@@ -81,7 +81,7 @@ class ListingController extends Controller
 
         $listingsQuery = Listing::query()
             ->active()
-            ->with('category:id,name')
+            ->withListingCardRelations()
             ->forBrowseFilters([
                 ...$browseFilters,
                 'category_ids' => $listingDirectory['filterIds'],

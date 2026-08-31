@@ -100,6 +100,33 @@
     height: 32px;
 }
 
+.listing-card__category-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    height: 100%;
+    padding: var(--space-4);
+    background: var(--ink-50);
+    color: var(--ink-500);
+    text-align: center;
+}
+
+.listing-card__media img.listing-card__category-image {
+    width: auto;
+    height: auto;
+    max-width: 96px;
+    max-height: 78px;
+    object-fit: contain;
+}
+
+.listing-card__category-name {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    line-height: 1.3;
+}
+
 .listing-card__placeholder {
     display: flex;
     align-items: center;

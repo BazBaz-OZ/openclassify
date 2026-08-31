@@ -3,6 +3,9 @@
 @php
     $listingId = (int) $listing->getKey();
     $image = $listing->primaryImageUrl('card');
+    $category = $listing->category;
+    $categoryIcon = trim((string) ($category?->getAttribute('icon') ?: $category?->parent?->getAttribute('icon')));
+    $categoryName = trim((string) ($category?->getAttribute('name') ?: 'Listing'));
     $isFeatured = (bool) $listing->getAttribute('is_featured') || in_array($listingId, $featuredIds, true);
     $city = trim((string) $listing->getAttribute('city'));
     $country = trim((string) $listing->getAttribute('country'));
@@ -25,6 +28,16 @@
                     loading="lazy"
                     decoding="async"
                 >
+            @elseif($categoryIcon !== '')
+                <span class="listing-card__category-placeholder">
+                    <img
+                        src="{{ asset(ltrim($categoryIcon, '/')) }}"
+                        alt=""
+                        class="listing-card__category-image"
+                        loading="lazy"
+                    >
+                    <span class="listing-card__category-name">{{ $categoryName }}</span>
+                </span>
             @else
                 <span class="listing-card__placeholder"><x-ui.icon name="image"/></span>
             @endif

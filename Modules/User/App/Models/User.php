@@ -258,7 +258,8 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     public function favoriteListingsPage(string $statusFilter = 'all', ?int $categoryId = null, int $perPage = 10): LengthAwarePaginator
     {
         return $this->favoriteListings()
-            ->with(['category:id,name', 'user:id,name'])
+            ->withListingCardRelations()
+            ->with('user:id,name')
             ->wherePivot('created_at', '>=', now()->subYear())
             ->when($statusFilter === 'active', fn ($query) => $query->where('status', 'active'))
             ->when($categoryId, fn ($query) => $query->where('category_id', $categoryId))

@@ -21,10 +21,16 @@
                 </div>
             </form>
 
-            <div class="hero__stats">
-                <span class="hero__stat"><strong>{{ number_format($listingCount) }}</strong> {{ __('site::messages.active_listings') }}</span>
-                <span class="hero__stat"><strong>{{ number_format($categoryCount) }}</strong> {{ __('site::messages.categories') }}</span>
-                <span class="hero__stat"><strong>{{ number_format($userCount) }}</strong> {{ __('site::messages.members') }}</span>
+            <div class="hero__actions">
+                <a
+                    href="{{ auth()->check() ? route('panel.listings.create') : route('register') }}"
+                    class="button button--primary button--large"
+                >
+                    {{ __('site::messages.sell_your_junk') }}
+                </a>
+                <a href="{{ route('listings.index') }}" class="button button--secondary button--large">
+                    {{ __('site::messages.browse_listings') }}
+                </a>
             </div>
         </div>
     </div>
@@ -88,9 +94,17 @@
             @endif
         </section>
 
+        <section class="garage-sale-teaser">
+            <div class="garage-sale-teaser__content">
+                <span class="badge badge--solid">{{ __('site::messages.coming_soon') }}</span>
+                <h2 class="title-section">{{ __('site::messages.virtual_garage_sales') }}</h2>
+                <p class="garage-sale-teaser__text">{{ __('site::messages.virtual_garage_sales_lead') }}</p>
+            </div>
+        </section>
+
         <section class="promo-banner">
             <h2 class="promo-banner__title">{{ __('site::messages.sell_something') }}</h2>
-            <p class="promo-banner__text">{{ __('site::messages.hero_lead') }}</p>
+            <p class="promo-banner__text">{{ __('site::messages.promo_sell_lead') }}</p>
             <div class="row row--wrap">
                 <a href="{{ auth()->check() ? route('panel.listings.create') : route('register') }}" class="button button--secondary">
                     {{ __('site::messages.post_listing_cta') }}
