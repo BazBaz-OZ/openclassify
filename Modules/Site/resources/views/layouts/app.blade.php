@@ -585,5 +585,60 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // SMJ LISTING SHARE
+
+    document.querySelectorAll('[data-share]').forEach((button) => {
+        button.addEventListener('click', async () => {
+            const url = button.dataset.share;
+            const title = button.dataset.shareTitle || document.title;
+            const originalLabel = button.dataset.shareLabel || 'Share';
+            const doneLabel = button.dataset.shareDone || 'Copied';
+            const label = button.querySelector('span');
+
+            try {
+                if (navigator.share) {
+                    await navigator.share({
+                        title,
+                        url
+                    });
+
+                    return;
+                }
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(url);
+                } else {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = url;
+                    textarea.setAttribute('readonly', '');
+                    textarea.style.position = 'fixed';
+                    textarea.style.opacity = '0';
+
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    textarea.remove();
+                }
+
+                if (label) {
+                    label.textContent = doneLabel;
+
+                    setTimeout(() => {
+                        label.textContent = originalLabel;
+                    }, 1800);
+                }
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('Unable to share listing:', error);
+                }
+            }
+        });
+    });
+});
+</script>
+
 </body>
 </html>
