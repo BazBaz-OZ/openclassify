@@ -45,6 +45,69 @@
     <link rel="canonical" href="{{ url()->current() }}">
     @vite(['resources/ts/app.ts'])
     @livewireStyles
+
+    <!-- SMJ SEARCH SUGGESTIONS -->
+    <style>
+        [data-search-form] {
+            position: relative;
+        }
+
+        .search-suggestions {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: #fff;
+            border: 1px solid rgba(0, 0, 0, .12);
+            border-radius: 10px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, .15);
+            overflow: hidden;
+            max-height: 420px;
+            overflow-y: auto;
+            text-align: left;
+        }
+
+        .search-suggestions__heading {
+            padding: 9px 14px 5px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: #666;
+        }
+
+        .search-suggestions__item {
+            display: block;
+            padding: 10px 14px;
+            text-decoration: none;
+            color: inherit;
+            border-top: 1px solid rgba(0, 0, 0, .06);
+        }
+
+        .search-suggestions__item:hover,
+        .search-suggestions__item.is-active {
+            background: rgba(0, 0, 0, .05);
+        }
+
+        .search-suggestions__label {
+            display: block;
+            font-weight: 600;
+        }
+
+        .search-suggestions__meta {
+            display: block;
+            margin-top: 2px;
+            font-size: 12px;
+            color: #777;
+        }
+
+        .search-suggestions__empty {
+            padding: 12px 14px;
+            color: #777;
+        }
+    </style>
+
 </head>
 <body data-inbox-channel="{{ $isAuthenticated ? 'users.'.auth()->id().'.inbox' : '' }}">
 
@@ -74,7 +137,14 @@
                 </a>
             </div>
 
-            <form action="{{ route('listings.index') }}" method="GET" class="site-search" role="search" data-search-form>
+            <form
+                action="{{ route('listings.index') }}"
+                method="GET"
+                class="site-search"
+                role="search"
+                data-search-form
+                data-search-suggestions-url="{{ route('listings.search-suggestions') }}"
+            >
                 <x-ui.icon name="search" class="site-search__icon"/>
                 <label class="visually-hidden" for="site-search-input">{{ __('site::messages.search') }}</label>
                 <input
@@ -91,6 +161,12 @@
                     <x-ui.icon name="close"/>
                 </button>
                 <button type="submit" class="site-search__submit">{{ __('site::messages.search') }}</button>
+
+                <div
+                    class="search-suggestions"
+                    data-search-suggestions
+                    hidden
+                ></div>
             </form>
 
             <div class="site-header__actions" data-disclosure-group>
@@ -330,5 +406,184 @@
 
 @livewireScripts
 <x-impersonate::banner/>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // SMJ SEARCH SUGGESTIONS
+
+    document.querySelectorAll('[data-search-form]').forEach((form) => {
+        const input = form.querySelector('[data-search-input]');
+        const box = form.querySelector('[data-search-suggestions]');
+        const url = form.dataset.searchSuggestionsUrl;
+
+        if (!input || !box || !url) {
+            return;
+        }
+
+        let timer = null;
+        let controller = null;
+        let activeIndex = -1;
+
+        const closeSuggestions = () => {
+            box.hidden = true;
+            activeIndex = -1;
+        };
+
+        const suggestionItems = () =>
+            Array.from(box.querySelectorAll('[data-search-suggestion-item]'));
+
+        const setActiveItem = (index) => {
+            const items = suggestionItems();
+
+            items.forEach((item) => item.classList.remove('is-active'));
+
+            if (items.length === 0) {
+                activeIndex = -1;
+                return;
+            }
+
+            if (index < 0) {
+                index = items.length - 1;
+            }
+
+            if (index >= items.length) {
+                index = 0;
+            }
+
+            activeIndex = index;
+            items[activeIndex].classList.add('is-active');
+            items[activeIndex].scrollIntoView({ block: 'nearest' });
+        };
+
+        const escapeHtml = (value) => {
+            const div = document.createElement('div');
+            div.textContent = value ?? '';
+            return div.innerHTML;
+        };
+
+        const renderGroup = (heading, items) => {
+            if (!Array.isArray(items) || items.length === 0) {
+                return '';
+            }
+
+            return `
+                <div class="search-suggestions__heading">${escapeHtml(heading)}</div>
+                ${items.map((item) => `
+                    <a
+                        href="${escapeHtml(item.url)}"
+                        class="search-suggestions__item"
+                        data-search-suggestion-item
+                    >
+                        <span class="search-suggestions__label">${escapeHtml(item.label)}</span>
+                        ${item.meta
+                            ? `<span class="search-suggestions__meta">${escapeHtml(item.meta)}</span>`
+                            : ''
+                        }
+                    </a>
+                `).join('')}
+            `;
+        };
+
+        const loadSuggestions = async () => {
+            const value = input.value.trim();
+
+            if (value.length < 2) {
+                closeSuggestions();
+                box.innerHTML = '';
+                return;
+            }
+
+            if (controller) {
+                controller.abort();
+            }
+
+            controller = new AbortController();
+
+            try {
+                const response = await fetch(
+                    `${url}?q=${encodeURIComponent(value)}`,
+                    {
+                        headers: {
+                            'Accept': 'application/json'
+                        },
+                        signal: controller.signal
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                const html =
+                    renderGroup('Listings', data.listings) +
+                    renderGroup('Categories', data.categories);
+
+                box.innerHTML = html || `
+                    <div class="search-suggestions__empty">
+                        No suggestions
+                    </div>
+                `;
+
+                box.hidden = false;
+                activeIndex = -1;
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('Search suggestions failed:', error);
+                    closeSuggestions();
+                }
+            }
+        };
+
+        input.addEventListener('input', () => {
+            clearTimeout(timer);
+
+            timer = setTimeout(loadSuggestions, 180);
+        });
+
+        input.addEventListener('focus', () => {
+            if (input.value.trim().length >= 2) {
+                clearTimeout(timer);
+                timer = setTimeout(loadSuggestions, 100);
+            }
+        });
+
+        input.addEventListener('keydown', (event) => {
+            const items = suggestionItems();
+
+            if (box.hidden || items.length === 0) {
+                return;
+            }
+
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                setActiveItem(activeIndex + 1);
+            }
+
+            if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                setActiveItem(activeIndex - 1);
+            }
+
+            if (event.key === 'Enter' && activeIndex >= 0) {
+                event.preventDefault();
+                window.location.href = items[activeIndex].href;
+            }
+
+            if (event.key === 'Escape') {
+                closeSuggestions();
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!form.contains(event.target)) {
+                closeSuggestions();
+            }
+        });
+    });
+});
+</script>
+
 </body>
 </html>

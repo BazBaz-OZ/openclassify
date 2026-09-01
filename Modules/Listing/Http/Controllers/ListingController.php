@@ -257,6 +257,64 @@ class ListingController extends Controller
         return response()->json($listing->contactDetailsFor(auth()->user()));
     }
 
+
+    public function searchSuggestions(): JsonResponse
+    {
+        $search = trim((string) request('q', ''));
+
+        if (mb_strlen($search) < 2) {
+            return response()->json([
+                'listings' => [],
+                'categories' => [],
+            ]);
+        }
+
+        $terms = preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        $listings = Listing::query()
+            ->active()
+            ->searchTerm($search)
+            ->orderByRaw(
+                'CASE WHEN title ILIKE ? THEN 0 ELSE 1 END',
+                [$search.'%']
+            )
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get(['id', 'title', 'city'])
+            ->map(fn (Listing $listing): array => [
+                'type' => 'listing',
+                'id' => (int) $listing->getKey(),
+                'label' => (string) $listing->title,
+                'meta' => (string) ($listing->city ?? ''),
+                'url' => route('listings.show', ['listing' => $listing->getKey()]),
+            ])
+            ->values();
+
+        $categories = Category::query()
+            ->active()
+            ->where(function ($query) use ($terms): void {
+                foreach ($terms as $term) {
+                    $query->orWhere('name', 'ilike', "%{$term}%");
+                }
+            })
+            ->ordered()
+            ->limit(3)
+            ->get(['id', 'name'])
+            ->map(fn (Category $category): array => [
+                'type' => 'category',
+                'id' => (int) $category->getKey(),
+                'label' => (string) $category->name,
+                'meta' => 'Category',
+                'url' => route('listings.index', ['category' => $category->getKey()]),
+            ])
+            ->values();
+
+        return response()->json([
+            'listings' => $listings,
+            'categories' => $categories,
+        ]);
+    }
+
     public function create()
     {
         if (! auth()->check()) {

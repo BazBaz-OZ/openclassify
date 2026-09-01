@@ -131,12 +131,18 @@ class Listing extends Model implements HasMedia
             return $query;
         }
 
-        return $query->where(function (Builder $searchQuery) use ($search): void {
-            $searchQuery
-                ->where('title', 'like', "%{$search}%")
-                ->orWhere('description', 'like', "%{$search}%")
-                ->orWhere('city', 'like', "%{$search}%")
-                ->orWhere('country', 'like', "%{$search}%");
+        $terms = preg_split('/\\s+/', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return $query->where(function (Builder $searchQuery) use ($terms): void {
+            foreach ($terms as $term) {
+                $searchQuery->orWhere(function (Builder $termQuery) use ($term): void {
+                    $termQuery
+                        ->where('title', 'ilike', "%{$term}%")
+                        ->orWhere('description', 'ilike', "%{$term}%")
+                        ->orWhere('city', 'ilike', "%{$term}%")
+                        ->orWhere('country', 'ilike', "%{$term}%");
+                });
+            }
         });
     }
 

@@ -10,15 +10,36 @@
             <h1 class="title-hero hero__title">{{ __('site::messages.hero_title') }}</h1>
             <p class="text-lead hero__lead">{{ __('site::messages.hero_lead') }}</p>
 
-            <form action="{{ route('listings.index') }}" method="GET" class="hero__search" role="search">
+            <form
+                action="{{ route('listings.index') }}"
+                method="GET"
+                class="hero__search"
+                role="search"
+                data-search-form
+                data-search-suggestions-url="{{ route('listings.search-suggestions') }}"
+            >
                 <div class="hero__search-row">
                     <span class="input-affix">
                         <x-ui.icon name="search" class="input-affix__icon"/>
                         <label class="visually-hidden" for="hero-search">{{ __('site::messages.search') }}</label>
-                        <input id="hero-search" type="search" name="search" class="input" placeholder="{{ __('site::messages.search_placeholder') }}">
+                        <input
+                            id="hero-search"
+                            type="search"
+                            name="search"
+                            class="input"
+                            placeholder="{{ __('site::messages.search_placeholder') }}"
+                            autocomplete="off"
+                            data-search-input
+                        >
                     </span>
                     <button type="submit" class="button button--primary button--large">{{ __('site::messages.search') }}</button>
                 </div>
+
+                <div
+                    class="search-suggestions"
+                    data-search-suggestions
+                    hidden
+                ></div>
             </form>
 
             <div class="hero__actions">
