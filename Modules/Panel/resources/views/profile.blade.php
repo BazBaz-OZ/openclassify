@@ -38,7 +38,7 @@
 
                 <div class="field">
                     <label class="field__label" for="profile-phone">{{ __('user::messages.phone') }}</label>
-                    <input id="profile-phone" type="tel" name="phone" value="{{ old('phone', $user->getAttribute('phone')) }}" class="input">
+                    <input id="profile-phone" type="tel" name="phone" value="{{ old('phone', $user->profile?->phone) }}" class="input">
                     @error('phone')<p class="field__error">{{ $message }}</p>@enderror
                 </div>
 

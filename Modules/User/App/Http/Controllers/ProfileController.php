@@ -29,7 +29,11 @@ class ProfileController extends Controller
                 'max:255',
                 Rule::unique('users')->ignore($request->user()->id),
             ],
+            'phone' => ['nullable', 'string', 'max:30'],
         ]);
+
+        $phone = trim((string) ($validated['phone'] ?? ''));
+        unset($validated['phone']);
 
         $request->user()->fill($validated);
 
@@ -38,6 +42,11 @@ class ProfileController extends Controller
         }
 
         $request->user()->save();
+
+        $request->user()->profile()->updateOrCreate(
+            ['user_id' => $request->user()->id],
+            ['phone' => $phone !== '' ? $phone : null],
+        );
 
         return redirect()->route('panel.profile.edit')->with('status', 'profile-updated');
     }
