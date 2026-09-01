@@ -37,11 +37,17 @@ class ProfileController extends Controller
 
         $request->user()->fill($validated);
 
-        if ($request->user()->isDirty('email')) {
+        $emailChanged = $request->user()->isDirty('email');
+
+        if ($emailChanged) {
             $request->user()->email_verified_at = null;
         }
 
         $request->user()->save();
+
+        if ($emailChanged) {
+            $request->user()->sendEmailVerificationNotification();
+        }
 
         $request->user()->profile()->updateOrCreate(
             ['user_id' => $request->user()->id],
