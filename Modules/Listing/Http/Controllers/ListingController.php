@@ -11,7 +11,9 @@ use Modules\Conversation\App\Models\Conversation;
 use Modules\Favorite\App\Models\FavoriteSearch;
 use Modules\Listing\Models\Listing;
 use Modules\Listing\Support\ListingCustomFieldSchemaBuilder;
+use Modules\Location\Models\City;
 use Modules\Location\Models\Country;
+use Modules\Location\Models\District;
 use Modules\Offer\Models\Offer;
 use Modules\Report\Models\Report;
 use Modules\Review\Models\Review;
@@ -28,11 +30,11 @@ class ListingController extends Controller
         $categoryId = request()->integer('category');
         $categoryId = $categoryId > 0 ? $categoryId : null;
 
-        $countryId = request()->integer('country');
-        $countryId = $countryId > 0 ? $countryId : null;
-
         $cityId = request()->integer('city');
         $cityId = $cityId > 0 ? $cityId : null;
+
+        $districtId = request()->integer('district');
+        $districtId = $districtId > 0 ? $districtId : null;
 
         $sellerUserId = request()->integer('user');
         $sellerUserId = $sellerUserId > 0 ? $sellerUserId : null;
@@ -54,20 +56,59 @@ class ListingController extends Controller
             $sort = 'smart';
         }
 
-        $locationSelection = Country::browseSelection($countryId, $cityId);
-        $countryId = $locationSelection['country_id'];
-        $cityId = $locationSelection['city_id'];
-        $countries = $locationSelection['countries'];
-        $cities = $locationSelection['cities'];
-        $selectedCountryName = $locationSelection['selected_country_name'];
-        $selectedCityName = $locationSelection['selected_city_name'];
+        $australia = Country::resolveLookup('Australia');
+        $countryId = $australia ? (int) $australia->getKey() : null;
+
+        $cities = $countryId
+            ? City::query()
+                ->where('country_id', $countryId)
+                ->active()
+                ->orderBy('name')
+                ->get(['id', 'name', 'country_id'])
+            : collect();
+
+        $selectedCity = $cityId
+            ? $cities->firstWhere('id', $cityId)
+            : null;
+
+        if (! $selectedCity) {
+            $cityId = null;
+            $districtId = null;
+        }
+
+        $districts = $selectedCity
+            ? District::query()
+                ->where('city_id', $selectedCity->getKey())
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'city_id'])
+            : collect();
+
+        $selectedDistrict = $districtId
+            ? $districts->firstWhere('id', $districtId)
+            : null;
+
+        if (! $selectedDistrict) {
+            $districtId = null;
+        }
+
+        $locationNames = null;
+
+        if ($selectedDistrict) {
+            $locationNames = [(string) $selectedDistrict->name];
+        } elseif ($selectedCity) {
+            $locationNames = [
+                (string) $selectedCity->name,
+                ...$districts->pluck('name')->map(fn ($name) => (string) $name)->all(),
+            ];
+        }
 
         $listingDirectory = Category::listingDirectory($categoryId);
 
         $browseFilters = [
             'search' => $search,
-            'country' => $selectedCountryName,
-            'city' => $selectedCityName,
+            'country' => 'Australia',
+            'city_names' => $locationNames,
             'user_id' => $sellerUserId,
             'min_price' => $minPrice,
             'max_price' => $maxPrice,
@@ -119,13 +160,14 @@ class ListingController extends Controller
             'categoryId',
             'countryId',
             'cityId',
+            'districtId',
             'sellerUserId',
             'minPriceInput',
             'maxPriceInput',
             'dateFilter',
             'sort',
-            'countries',
             'cities',
+            'districts',
             'selectedCategory',
             'categories',
             'favoriteListingIds',

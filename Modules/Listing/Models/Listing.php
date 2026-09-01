@@ -176,6 +176,11 @@ class Listing extends Model implements HasMedia
         $search = trim((string) ($filters['search'] ?? ''));
         $country = isset($filters['country']) ? trim((string) $filters['country']) : null;
         $city = isset($filters['city']) ? trim((string) $filters['city']) : null;
+        $cityNames = collect($filters['city_names'] ?? [])
+            ->filter(fn ($name) => is_string($name) && trim($name) !== '')
+            ->map(fn ($name) => trim($name))
+            ->values()
+            ->all();
         $userId = isset($filters['user_id']) && is_numeric($filters['user_id']) ? (int) $filters['user_id'] : null;
         $minPrice = is_numeric($filters['min_price'] ?? null) ? max((float) $filters['min_price'], 0) : null;
         $maxPrice = is_numeric($filters['max_price'] ?? null) ? max((float) $filters['max_price'], 0) : null;
@@ -187,7 +192,11 @@ class Listing extends Model implements HasMedia
             ->forCategoryIds(is_array($categoryIds) ? $categoryIds : null)
             ->when(! is_null($userId) && $userId > 0, fn (Builder $builder) => $builder->where('user_id', $userId))
             ->when($country !== null && $country !== '', fn (Builder $builder) => $builder->where('country', $country))
-            ->when($city !== null && $city !== '', fn (Builder $builder) => $builder->where('city', $city))
+            ->when($cityNames !== [], fn (Builder $builder) => $builder->whereIn('city', $cityNames))
+            ->when(
+                $cityNames === [] && $city !== null && $city !== '',
+                fn (Builder $builder) => $builder->where('city', $city)
+            )
             ->when(! is_null($minPrice), fn (Builder $builder) => $builder->whereNotNull('price')->where('price', '>=', $minPrice))
             ->when(! is_null($maxPrice), fn (Builder $builder) => $builder->whereNotNull('price')->where('price', '<=', $maxPrice));
 

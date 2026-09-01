@@ -83,21 +83,27 @@
 
                         <div class="filter-group">
                             <p class="filter-group__title">{{ __('site::messages.location') }}</p>
+
                             <div class="field">
-                                <label class="field__label" for="filter-country">{{ __('site::messages.country') }}</label>
-                                <select id="filter-country" name="country" class="select">
-                                    <option value="">{{ __('site::messages.all_countries') }}</option>
-                                    @foreach($countries as $country)
-                                        <option value="{{ $country->getKey() }}" @selected($countryId === (int) $country->getKey())>{{ $country->getAttribute('name') }}</option>
+                                <label class="field__label" for="filter-city">{{ __('site::messages.city') }}</label>
+                                <select id="filter-city" name="city" class="select">
+                                    <option value="">{{ __('site::messages.all_cities') }}</option>
+                                    @foreach($cities as $city)
+                                        <option value="{{ $city->getKey() }}" @selected($cityId === (int) $city->getKey())>
+                                            {{ $city->getAttribute('name') }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
+
                             <div class="field">
-                                <label class="field__label" for="filter-city">{{ __('site::messages.city') }}</label>
-                                <select id="filter-city" name="city" class="select" @disabled($cities->isEmpty())>
-                                    <option value="">{{ __('site::messages.all_cities') }}</option>
-                                    @foreach($cities as $city)
-                                        <option value="{{ $city->getKey() }}" @selected($cityId === (int) $city->getKey())>{{ $city->getAttribute('name') }}</option>
+                                <label class="field__label" for="filter-district">Suburb / Area</label>
+                                <select id="filter-district" name="district" class="select" @disabled($cityId === null)>
+                                    <option value="">All suburbs / areas</option>
+                                    @foreach($districts as $district)
+                                        <option value="{{ $district->getKey() }}" @selected($districtId === (int) $district->getKey())>
+                                            {{ $district->getAttribute('name') }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -187,4 +193,60 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const citySelect = document.getElementById('filter-city');
+    const districtSelect = document.getElementById('filter-district');
+
+    if (!citySelect || !districtSelect) {
+        return;
+    }
+
+    const resetDistricts = () => {
+        districtSelect.innerHTML = '<option value="">All suburbs / areas</option>';
+        districtSelect.disabled = true;
+    };
+
+    citySelect.addEventListener('change', async () => {
+        const cityId = citySelect.value;
+
+        resetDistricts();
+
+        if (!cityId) {
+            return;
+        }
+
+        districtSelect.innerHTML = '<option value="">Loading...</option>';
+
+        try {
+            const response = await fetch(`/locations/districts/${encodeURIComponent(cityId)}`, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const districts = await response.json();
+
+            districtSelect.innerHTML = '<option value="">All suburbs / areas</option>';
+
+            districts.forEach((district) => {
+                const option = document.createElement('option');
+                option.value = district.id;
+                option.textContent = district.name;
+                districtSelect.appendChild(option);
+            });
+
+            districtSelect.disabled = districts.length === 0;
+        } catch (error) {
+            console.error('Unable to load suburbs:', error);
+            resetDistricts();
+        }
+    });
+});
+</script>
 @endsection
