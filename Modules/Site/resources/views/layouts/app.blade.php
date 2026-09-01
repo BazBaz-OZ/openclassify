@@ -108,6 +108,27 @@
         }
     </style>
 
+<style>
+
+    /* SMJ FAVORITE STATE */
+    [data-favorite-toggle] svg {
+        color: #111;
+        fill: none;
+        transition: color .15s ease, fill .15s ease;
+    }
+
+    [data-favorite-toggle].is-active svg,
+    [data-favorite-toggle][aria-pressed="true"] svg {
+        color: #d60000;
+        fill: currentColor;
+    }
+
+    [data-favorite-toggle].is-active span,
+    [data-favorite-toggle][aria-pressed="true"] span {
+        color: #d60000;
+    }
+
+</style>
 </head>
 <body data-inbox-channel="{{ $isAuthenticated ? 'users.'.auth()->id().'.inbox' : '' }}">
 
@@ -211,7 +232,10 @@
                 @auth
                     <a href="{{ route('favorites.index') }}" class="icon-button site-header__desktop-only" aria-label="{{ __('site::messages.favorites') }}">
                         <x-ui.icon name="heart"/>
-                        @if($favoriteCount > 0)<span class="icon-button__badge">{{ $badge($favoriteCount) }}</span>@endif
+                        <span
+                            class="icon-button__badge {{ $favoriteCount > 0 ? '' : 'is-hidden' }}"
+                            data-favorite-header-count="{{ $favoriteCount }}"
+                        >{{ $badge($favoriteCount) }}</span>
                     </a>
                     <a href="{{ route('panel.notifications.index') }}" class="icon-button site-header__desktop-only" aria-label="{{ __('notification::messages.notifications') }}">
                         <x-ui.icon name="bell"/>
@@ -637,6 +661,98 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+});
+</script>
+
+
+<script>
+// SMJ FAVORITE TOGGLE
+
+document.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-favorite-toggle]');
+
+    if (!button) {
+        return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const url = button.dataset.favoriteToggle;
+
+    const csrfToken = document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute('content');
+
+    if (!url || !csrfToken || button.disabled) {
+        return;
+    }
+
+    const previousState =
+        button.getAttribute('aria-pressed') === 'true';
+
+    const desiredState = !previousState;
+
+    const updateButtons = (favorited) => {
+        document.querySelectorAll('[data-favorite-toggle]').forEach((item) => {
+            if (item.dataset.favoriteToggle !== url) {
+                return;
+            }
+
+            item.setAttribute(
+                'aria-pressed',
+                favorited ? 'true' : 'false'
+            );
+
+            item.classList.toggle('is-active', favorited);
+
+            const label = item.querySelector('span');
+
+            if (label) {
+                label.textContent = favorited ? 'Saved' : 'Save';
+            }
+        });
+    };
+
+    /*
+     * Update immediately so the user sees the click.
+     * Revert if the server request fails.
+     */
+    updateButtons(desiredState);
+
+    button.disabled = true;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        });
+
+        if (response.status === 401 || response.status === 419) {
+            window.location.href = '{{ route('login') }}';
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        /*
+         * Use the actual state returned by Laravel.
+         */
+        updateButtons(Boolean(data.favorited));
+    } catch (error) {
+        updateButtons(previousState);
+        console.error('Unable to update favorite:', error);
+    } finally {
+        button.disabled = false;
+    }
 });
 </script>
 

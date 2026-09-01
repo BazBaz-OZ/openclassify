@@ -80,9 +80,23 @@ class FavoriteController extends Controller
 
     public function toggleListing(Request $request, Listing $listing)
     {
-        $isNowFavorite = $request->user()->toggleFavoriteListing($listing);
+        $user = $request->user();
 
-        return $this->redirectBack($request)->with('success', $isNowFavorite ? 'Listing added to favorites.' : 'Listing removed from favorites.');
+        $isNowFavorite = $user->toggleFavoriteListing($listing);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'favorited' => $isNowFavorite,
+                'count' => $user->favoriteListings()->count(),
+            ]);
+        }
+
+        return $this->redirectBack($request)->with(
+            'success',
+            $isNowFavorite
+                ? 'Listing added to favorites.'
+                : 'Listing removed from favorites.'
+        );
     }
 
     public function toggleSeller(Request $request, User $seller)

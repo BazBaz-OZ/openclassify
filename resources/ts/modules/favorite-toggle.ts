@@ -47,6 +47,16 @@ export const favoriteToggle = defineBehavior<HTMLButtonElement>({
                 if (counter !== null) {
                     counter.textContent = String(result.value.count);
                 }
+
+                const headerCounter = document.querySelector<HTMLElement>(
+                    '[data-favorite-header-count]',
+                );
+
+                if (headerCounter !== null) {
+                    headerCounter.dataset['favoriteHeaderCount'] = String(result.value.count);
+                    headerCounter.textContent = String(result.value.count);
+                    headerCounter.classList.toggle('is-hidden', result.value.count <= 0);
+                }
             });
         });
     },
