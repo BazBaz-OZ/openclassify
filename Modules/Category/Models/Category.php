@@ -388,7 +388,14 @@ class Category extends Model
     {
         $path = $this->resolvedIconPath();
 
-        return $path ? asset($path) : null;
+        if (! $path) {
+            return null;
+        }
+
+        $fullPath = public_path($path);
+        $version = file_exists($fullPath) ? filemtime($fullPath) : null;
+
+        return asset($path).($version ? '?v='.$version : '');
     }
 
     private static function buildListingDirectoryTree(Collection $categories, Collection $activeListingCounts, ?int $parentId = null): Collection
