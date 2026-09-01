@@ -24,6 +24,7 @@ use Modules\Listing\States\SoldListingStatus;
 use Modules\Listing\Support\ListingImageViewData;
 use Modules\Listing\Support\ListingPanelHelper;
 use Modules\Site\App\Support\LocalMedia;
+use Modules\User\App\Models\Profile;
 use Modules\User\App\Models\User;
 use Modules\Video\Models\Video;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -605,7 +606,20 @@ class Listing extends Model implements HasMedia
 
     public function hasContactDetails(): bool
     {
-        return filled($this->contact_phone) || filled($this->contact_email);
+        if (! $this->user_id) {
+            return false;
+        }
+
+        $profile = Profile::query()
+            ->where('user_id', $this->user_id)
+            ->first(['show_phone', 'show_email']);
+
+        if (! $profile) {
+            return false;
+        }
+
+        return ($profile->show_phone && filled($this->contact_phone))
+            || ($profile->show_email && filled($this->contact_email));
     }
 
     public function canRevealContactTo(?User $user): bool
@@ -619,19 +633,30 @@ class Listing extends Model implements HasMedia
 
     public function contactDetailsFor(?User $user): array
     {
-        $canAccess = $this->canRevealContactTo($user)
-            || ($user && $this->user_id && (int) $this->user_id === (int) $user->getKey());
+        $isOwner = $user
+            && $this->user_id
+            && (int) $this->user_id === (int) $user->getKey();
 
-        if (! $canAccess) {
+        if (! $isOwner && ! $this->canRevealContactTo($user)) {
             return [
                 'phone' => '',
                 'email' => '',
             ];
         }
 
+        $profile = Profile::query()
+            ->where('user_id', $this->user_id)
+            ->first(['show_phone', 'show_email']);
+
         return [
-            'phone' => filled($this->contact_phone) ? (string) $this->contact_phone : '',
-            'email' => filled($this->contact_email) ? (string) $this->contact_email : '',
+            'phone' => ($isOwner || ($profile?->show_phone ?? false))
+                && filled($this->contact_phone)
+                    ? (string) $this->contact_phone
+                    : '',
+            'email' => ($isOwner || ($profile?->show_email ?? false))
+                && filled($this->contact_email)
+                    ? (string) $this->contact_email
+                    : '',
         ];
     }
 

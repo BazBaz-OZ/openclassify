@@ -13,9 +13,9 @@ class Profile extends Model
 {
     use LogsActivity, SoftDeletes;
 
-    protected $fillable = ['user_id', 'avatar', 'bio', 'phone', 'city', 'country', 'website', 'is_verified'];
+    protected $fillable = ['user_id', 'avatar', 'bio', 'phone', 'show_phone', 'show_email', 'city', 'country', 'website', 'is_verified'];
 
-    protected $casts = ['is_verified' => 'boolean'];
+    protected $casts = ['show_phone' => 'boolean', 'show_email' => 'boolean', 'is_verified' => 'boolean'];
 
     public function getActivitylogOptions(): LogOptions
     {

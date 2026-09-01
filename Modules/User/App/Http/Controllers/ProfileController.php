@@ -30,10 +30,15 @@ class ProfileController extends Controller
                 Rule::unique('users')->ignore($request->user()->id),
             ],
             'phone' => ['nullable', 'string', 'max:30'],
+            'show_phone' => ['nullable', 'boolean'],
+            'show_email' => ['nullable', 'boolean'],
         ]);
 
         $phone = trim((string) ($validated['phone'] ?? ''));
-        unset($validated['phone']);
+        $showPhone = $request->boolean('show_phone');
+        $showEmail = $request->boolean('show_email');
+
+        unset($validated['phone'], $validated['show_phone'], $validated['show_email']);
 
         $request->user()->fill($validated);
 
@@ -51,7 +56,11 @@ class ProfileController extends Controller
 
         $request->user()->profile()->updateOrCreate(
             ['user_id' => $request->user()->id],
-            ['phone' => $phone !== '' ? $phone : null],
+            [
+                'phone' => $phone !== '' ? $phone : null,
+                'show_phone' => $showPhone,
+                'show_email' => $showEmail,
+            ],
         );
 
         return redirect()->route('panel.profile.edit')->with('status', 'profile-updated');

@@ -42,6 +42,33 @@
                     @error('phone')<p class="field__error">{{ $message }}</p>@enderror
                 </div>
 
+                <div class="field">
+                    <label>
+                        <input
+                            type="checkbox"
+                            name="show_phone"
+                            value="1"
+                            @checked(old('show_phone', $user->profile?->show_phone ?? false))
+                        >
+                        Show my phone number to other users
+                    </label>
+                </div>
+
+                <div class="field">
+                    <label>
+                        <input
+                            type="checkbox"
+                            name="show_email"
+                            value="1"
+                            @checked(old('show_email', $user->profile?->show_email ?? false))
+                        >
+                        Show my email address to other users
+                    </label>
+                    <p class="text-muted">
+                        Both are private by default. Other users can still contact you through Sell My Junk messages.
+                    </p>
+                </div>
+
                 <button type="submit" class="button button--primary">{{ __('user::messages.save_changes') }}</button>
             </form>
         </section>
