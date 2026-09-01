@@ -43,6 +43,14 @@ class RegisterController extends Controller
             'marketing_opt_in' => $request->boolean('marketing_opt_in'),
         ]);
 
+        $phone = trim($request->string('phone')->toString());
+
+        if ($phone !== '') {
+            $user->profile()->create([
+                'phone' => $phone,
+            ]);
+        }
+
         event(new Registered($user));
 
         Auth::guard('web')->login($user);
