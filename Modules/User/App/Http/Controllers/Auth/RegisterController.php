@@ -40,12 +40,17 @@ class RegisterController extends Controller
             'name' => $request->fullName(),
             'email' => $request->string('email')->toString(),
             'password' => $request->string('password')->toString(),
+            'marketing_opt_in' => $request->boolean('marketing_opt_in'),
         ]);
 
         event(new Registered($user));
 
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
+
+        if (! $user->hasVerifiedEmail()) {
+            return redirect()->route('verification.notice');
+        }
 
         return redirect()->intended(route('dashboard', absolute: false));
     }

@@ -40,6 +40,37 @@
         <input id="password_confirmation" type="password" name="password_confirmation" class="input" required autocomplete="new-password">
     </div>
 
+    <div class="field">
+        <label class="checkbox">
+            <input
+                type="checkbox"
+                name="terms"
+                value="1"
+                required
+                @checked(old('terms'))
+            >
+            <span>
+                I agree to the
+                <a href="{{ route('pages.show', 'terms') }}" class="text-link" target="_blank" rel="noopener">Terms of Service</a>
+                and
+                <a href="{{ route('pages.show', 'privacy') }}" class="text-link" target="_blank" rel="noopener">Privacy Policy</a>.
+            </span>
+        </label>
+        @error('terms')<p class="field__error">{{ $message }}</p>@enderror
+    </div>
+
+    <div class="field">
+        <label class="checkbox">
+            <input
+                type="checkbox"
+                name="marketing_opt_in"
+                value="1"
+                @checked(old('marketing_opt_in'))
+            >
+            <span>Send me occasional marketplace updates and offers.</span>
+        </label>
+    </div>
+
     <button type="submit" class="button button--primary button--block button--large">{{ __('site::messages.register') }}</button>
 
     @include('user::auth.partials.social-buttons')

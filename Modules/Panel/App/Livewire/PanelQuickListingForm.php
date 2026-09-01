@@ -256,6 +256,14 @@ class PanelQuickListingForm extends Component
 
     public function publishListing(): void
     {
+        $user = auth()->user();
+
+        if (! $user || ! $user->hasVerifiedEmail()) {
+            $this->redirectRoute('verification.notice');
+
+            return;
+        }
+
         if ($this->isPublishing) {
             return;
         }

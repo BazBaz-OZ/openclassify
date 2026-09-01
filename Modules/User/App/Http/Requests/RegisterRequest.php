@@ -19,8 +19,7 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => ['required', 'string', 'max:120'],
-            'last_name' => ['required', 'string', 'max:120'],
+            'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique((new User)->getTable(), 'email')],
             'password' => ['required', Password::defaults()],
             'terms' => ['accepted'],
@@ -30,6 +29,6 @@ class RegisterRequest extends FormRequest
 
     public function fullName(): string
     {
-        return trim($this->string('first_name')->toString().' '.$this->string('last_name')->toString());
+        return trim($this->string('name')->toString());
     }
 }

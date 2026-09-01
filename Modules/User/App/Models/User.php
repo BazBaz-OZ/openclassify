@@ -10,6 +10,8 @@ use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
+use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
+use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -32,8 +34,9 @@ use Spatie\Activitylog\Support\LogOptions;
 use Spatie\ModelStates\HasStates;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements FilamentUser, HasAvatar
+class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerifyEmailContract
 {
+    use MustVerifyEmailTrait;
     use Billable;
     use HasApiTokens;
     use HasFactory;
@@ -44,7 +47,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     use SoftDeletes;
     use TwoFactorAuthenticatable;
 
-    protected $fillable = ['name', 'email', 'password', 'avatar_url', 'status'];
+    protected $fillable = ['name', 'email', 'password', 'avatar_url', 'status', 'marketing_opt_in'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -54,6 +57,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatus::class,
+            'marketing_opt_in' => 'boolean',
         ];
     }
 
@@ -68,6 +72,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => $data['password'],
+            'marketing_opt_in' => (bool) ($data['marketing_opt_in'] ?? false),
         ]);
     }
 
