@@ -48,6 +48,7 @@ class Listing extends Model implements HasMedia
         'contact_phone', 'contact_email', 'expires_at',
         'city', 'country', 'latitude', 'longitude', 'location', 'view_count',
         'quantity_total', 'quantity_available',
+        'clear_out_id',
     ];
 
     protected $casts = [
@@ -82,6 +83,11 @@ class Listing extends Model implements HasMedia
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function clearOut()
+    {
+        return $this->belongsTo(ClearOut::class);
     }
 
     public function user()

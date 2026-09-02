@@ -2,7 +2,13 @@
 
 declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
+use Modules\Listing\Http\Controllers\ClearOutController;
 use Modules\Listing\Http\Controllers\ListingController;
+
+Route::middleware('web')->group(function () {
+    Route::get('/clear-outs/{clearOut}', [ClearOutController::class, 'show'])
+        ->name('clear-outs.show');
+});
 
 Route::middleware('web')->prefix('listings')->name('listings.')->group(function () {
     Route::get('/', [ListingController::class, 'index'])->name('index');

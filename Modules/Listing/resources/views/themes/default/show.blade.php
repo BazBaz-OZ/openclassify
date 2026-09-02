@@ -96,6 +96,25 @@
                             </div>
                         </div>
 
+                        @if(
+                            $listing->getRelation('clearOut')
+                            && $listing->getRelation('clearOut')->status === \Modules\Listing\Models\ClearOut::STATUS_ACTIVE
+                        )
+                            <div class="alert">
+                                <x-ui.icon name="tag"/>
+                                <span>
+                                    Part of
+                                    <a
+                                        href="{{ route('clear-outs.show', $listing->getRelation('clearOut')) }}"
+                                        class="text-link"
+                                    >
+                                        {{ $listing->getRelation('clearOut')->title }}
+                                    </a>
+                                    — see the whole Clear Out.
+                                </span>
+                            </div>
+                        @endif
+
                         @if($isSold)
                             <div class="alert alert--sold" role="status">
                                 <strong>This item has been sold.</strong>

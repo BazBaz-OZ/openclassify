@@ -21,6 +21,10 @@
 </header>
 
 <nav class="chip-row">
+    <a href="{{ route('panel.bundle-offers.index') }}" class="pill">
+        Bundle Offers
+    </a>
+
     <a href="{{ route('panel.offers.index', ['direction' => 'received']) }}" class="pill {{ $direction === 'received' ? 'is-active' : '' }}">{{ __('offer::messages.received') }}</a>
     <a href="{{ route('panel.offers.index', ['direction' => 'sent']) }}" class="pill {{ $direction === 'sent' ? 'is-active' : '' }}">{{ __('offer::messages.sent_tab') }}</a>
 </nav>

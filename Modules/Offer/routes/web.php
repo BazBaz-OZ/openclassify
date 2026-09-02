@@ -3,10 +3,43 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\Offer\Http\Controllers\BundleOfferController;
 use Modules\Offer\Http\Controllers\OfferController;
 
 Route::middleware(['web', 'auth'])->group(function (): void {
     Route::get('/panel/offers', [OfferController::class, 'index'])->name('panel.offers.index');
+
+    Route::get(
+        '/panel/offers/bundles',
+        [BundleOfferController::class, 'index']
+    )->name('panel.bundle-offers.index');
+
+    Route::post(
+        '/clear-outs/{clearOut}/bundle-offers',
+        [BundleOfferController::class, 'store']
+    )
+        ->middleware('throttle:20,1')
+        ->name('bundle-offers.store');
+
+    Route::post(
+        '/bundle-offers/{bundleOffer}/accept',
+        [BundleOfferController::class, 'accept']
+    )->name('bundle-offers.accept');
+
+    Route::post(
+        '/bundle-offers/{bundleOffer}/decline',
+        [BundleOfferController::class, 'decline']
+    )->name('bundle-offers.decline');
+
+    Route::post(
+        '/bundle-offers/{bundleOffer}/fulfill',
+        [BundleOfferController::class, 'fulfill']
+    )->name('bundle-offers.fulfill');
+
+    Route::post(
+        '/bundle-offers/{bundleOffer}/withdraw',
+        [BundleOfferController::class, 'withdraw']
+    )->name('bundle-offers.withdraw');
 
     Route::name('offers.')->group(function (): void {
         Route::post('/listings/{listing}/offers', [OfferController::class, 'store'])

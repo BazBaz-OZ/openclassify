@@ -3,11 +3,35 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\Panel\App\Http\Controllers\ClearOutController;
 use Modules\Panel\App\Http\Controllers\PanelController;
 
 Route::middleware(['web', 'auth'])->prefix('panel')->name('panel.')->group(function () {
     Route::get('/', [PanelController::class, 'index'])->name('index');
     Route::get('/my-listings', [PanelController::class, 'listings'])->name('listings.index');
+
+    Route::get('/clear-outs', [ClearOutController::class, 'index'])
+        ->name('clear-outs.index');
+
+    Route::get('/clear-outs/create', [ClearOutController::class, 'create'])
+        ->middleware('verified')
+        ->name('clear-outs.create');
+
+    Route::post('/clear-outs', [ClearOutController::class, 'store'])
+        ->middleware('verified')
+        ->name('clear-outs.store');
+
+    Route::get('/clear-outs/{clearOut}/edit', [ClearOutController::class, 'edit'])
+        ->name('clear-outs.edit');
+
+    Route::put('/clear-outs/{clearOut}', [ClearOutController::class, 'update'])
+        ->name('clear-outs.update');
+
+    Route::post('/clear-outs/{clearOut}/publish', [ClearOutController::class, 'publish'])
+        ->name('clear-outs.publish');
+
+    Route::post('/clear-outs/{clearOut}/complete', [ClearOutController::class, 'complete'])
+        ->name('clear-outs.complete');
     Route::get('/create-listing', [PanelController::class, 'create'])
         ->middleware('verified')
         ->name('listings.create');

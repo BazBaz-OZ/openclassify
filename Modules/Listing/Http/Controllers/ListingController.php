@@ -187,6 +187,7 @@ class ListingController extends Controller
             'category:id,name,parent_id,slug',
             'category.parent:id,name,parent_id,slug',
             'category.parent.parent:id,name,parent_id,slug',
+            'clearOut:id,user_id,title,slug,status',
             'videos' => fn ($query) => $query->published()->ordered(),
         ]);
         $presentableCustomFields = ListingCustomFieldSchemaBuilder::presentableValues(
