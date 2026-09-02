@@ -79,19 +79,19 @@ export const inboxThread = defineBehavior<HTMLElement>({
                 submit.disabled = true;
             }
 
-            void post<unknown>(endpoint, { body }).then((result) => {
+            void post<{ message: unknown }>(endpoint, { message: body }).then((result) => {
                 field.disabled = false;
 
                 if (submit !== null) {
                     submit.disabled = false;
                 }
 
-                if (!result.ok || !isSentMessage(result.value)) {
+                if (!result.ok || !isSentMessage(result.value.message)) {
                     return;
                 }
 
                 field.value = '';
-                appendBubble(list, result.value.body, result.value.createdAt, true);
+                appendBubble(list, result.value.message.body, result.value.message.createdAt, true);
                 field.focus();
             });
         };

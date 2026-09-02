@@ -49,11 +49,14 @@
                 @php
                     $partner = $selectedConversation->partnerFor($viewerId);
                     $listing = $selectedConversation->getRelation('listing');
+                    $viewer = auth()->user();
+                    $viewerBlockedPartner = $partner && $viewer->hasBlocked($partner);
+                    $partnerBlockedViewer = $partner && $viewer->isBlockedBy($partner);
+                    $messagingBlocked = $viewerBlockedPartner || $partnerBlockedViewer;
                 @endphp
 
                 <div
-                    class="thread-layout__detail"
-                    style="display:flex;flex:1 1 auto;min-height:0"
+                    class="thread-view"
                     data-inbox-thread="{{ $selectedConversation->getKey() }}"
                     data-thread-endpoint="{{ route('conversations.messages.send', $selectedConversation) }}"
                 >
@@ -68,7 +71,96 @@
                                 <a href="{{ route('listings.show', $listing) }}" class="text-meta text-clamp-1">{{ $listing->getAttribute('title') }}</a>
                             @endif
                         </div>
+
+                        <div class="row row--wrap" style="margin-inline-start:auto">
+                            <button
+                                type="button"
+                                class="button button--ghost button--small"
+                                data-reveal-target="conversation-report-{{ $selectedConversation->getKey() }}"
+                            >
+                                <x-ui.icon name="flag"/>
+                                <span>Report user</span>
+                            </button>
+
+                            @if($viewerBlockedPartner)
+                                <form method="POST" action="{{ route('conversations.unblock', $selectedConversation) }}">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="button button--secondary button--small">
+                                        Unblock user
+                                    </button>
+                                </form>
+                            @else
+                                <form
+                                    method="POST"
+                                    action="{{ route('conversations.block', $selectedConversation) }}"
+                                    onsubmit="return confirm('Block this user? They will no longer be able to message you.');"
+                                >
+                                    @csrf
+                                    <button type="submit" class="button button--secondary button--small">
+                                        Block user
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                     </div>
+
+                    @if($partner)
+                        <form
+                            method="POST"
+                            action="{{ route('reports.store') }}"
+                            id="conversation-report-{{ $selectedConversation->getKey() }}"
+                            class="stack stack--tight"
+                            style="padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--line-hairline);"
+                            hidden
+                        >
+                            @csrf
+
+                            <input type="hidden" name="subject_type" value="user">
+                            <input type="hidden" name="subject_id" value="{{ $partner->getKey() }}">
+
+                            <div class="field__row field__row--two">
+                                <div class="field">
+                                    <label class="field__label" for="conversation-report-reason">
+                                        {{ __('report::messages.reason') }}
+                                    </label>
+
+                                    <select
+                                        id="conversation-report-reason"
+                                        name="reason"
+                                        class="select"
+                                        required
+                                    >
+                                        @foreach(\Modules\Report\Models\Report::reasons() as $reason)
+                                            <option value="{{ $reason }}">
+                                                {{ __('report::messages.reason_'.$reason) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="field">
+                                    <label class="field__label" for="conversation-report-details">
+                                        {{ __('report::messages.details') }}
+                                    </label>
+
+                                    <textarea
+                                        id="conversation-report-details"
+                                        name="details"
+                                        class="textarea"
+                                        rows="2"
+                                        maxlength="1000"
+                                        placeholder="{{ __('report::messages.placeholder') }}"
+                                    ></textarea>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="button button--critical button--small">
+                                <x-ui.icon name="flag"/>
+                                <span>{{ __('report::messages.submit') }}</span>
+                            </button>
+                        </form>
+                    @endif
 
                     <ul class="thread__messages" data-thread-messages>
                         @foreach($selectedConversation->getRelation('messages') as $message)

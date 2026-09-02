@@ -57,6 +57,26 @@
                         @error('status')<p class="field__error">{{ $message }}</p>@enderror
                     </div>
                 </div>
+
+                <div class="field">
+                    <label class="field__label" for="quantity_total">Quantity</label>
+                    <input
+                        id="quantity_total"
+                        type="number"
+                        min="1"
+                        max="1000000"
+                        step="1"
+                        name="quantity_total"
+                        value="{{ old('quantity_total', $listing->getAttribute('quantity_total')) }}"
+                        class="input"
+                        required
+                    >
+                    <p class="field__hint">
+                        Available now: {{ (int) $listing->getAttribute('quantity_available') }}
+                        · Sold: {{ $listing->quantitySold() }}
+                    </p>
+                    @error('quantity_total')<p class="field__error">{{ $message }}</p>@enderror
+                </div>
             </div>
         </section>
 

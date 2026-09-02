@@ -21,6 +21,7 @@ class UpdateListingRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
             'price' => ['nullable', 'numeric', 'min:0'],
+            'quantity_total' => ['required', 'integer', 'min:1', 'max:1000000'],
             'status' => ['required', Rule::in(array_keys(Listing::panelStatusOptions()))],
             'contact_phone' => ['nullable', 'string', 'max:60'],
             'contact_email' => ['nullable', 'email', 'max:255'],
@@ -35,6 +36,9 @@ class UpdateListingRequest extends FormRequest
         return [
             'title.required' => 'Listing title is required.',
             'price.numeric' => 'Listing price must be numeric.',
+            'quantity_total.required' => 'Quantity is required.',
+            'quantity_total.integer' => 'Quantity must be a whole number.',
+            'quantity_total.min' => 'Quantity must be at least 1.',
             'status.required' => 'Listing status is required.',
             'status.in' => 'Listing status is invalid.',
             'contact_email.email' => 'Contact email must be valid.',

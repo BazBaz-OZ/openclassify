@@ -138,6 +138,61 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerif
         return $this->hasMany(ConversationMessage::class, 'sender_id');
     }
 
+    public function blockedUsers()
+    {
+        return $this->belongsToMany(
+            self::class,
+            'user_blocks',
+            'blocker_id',
+            'blocked_id'
+        )->withTimestamps();
+    }
+
+    public function blockedByUsers()
+    {
+        return $this->belongsToMany(
+            self::class,
+            'user_blocks',
+            'blocked_id',
+            'blocker_id'
+        )->withTimestamps();
+    }
+
+    public function hasBlocked(self $user): bool
+    {
+        return $this->blockedUsers()
+            ->whereKey($user->getKey())
+            ->exists();
+    }
+
+    public function isBlockedBy(self $user): bool
+    {
+        return $this->blockedByUsers()
+            ->whereKey($user->getKey())
+            ->exists();
+    }
+
+    public function messagingBlockedWith(self $user): bool
+    {
+        return $this->hasBlocked($user) || $this->isBlockedBy($user);
+    }
+
+    public function blockUser(self $user): bool
+    {
+        if ((int) $this->getKey() === (int) $user->getKey()) {
+            return false;
+        }
+
+        $this->blockedUsers()->syncWithoutDetaching([$user->getKey()]);
+
+        return true;
+    }
+
+    public function unblockUser(self $user): void
+    {
+        $this->blockedUsers()->detach($user->getKey());
+    }
+
     public function canImpersonate(): bool
     {
         return $this->hasRole('admin');

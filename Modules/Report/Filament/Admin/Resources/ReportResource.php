@@ -61,7 +61,10 @@ class ReportResource extends Resource
             TextColumn::make('reason')->badge()->searchable(),
             TextColumn::make('status')->badge()->sortable(),
             TextColumn::make('reporter_id')->label('Reporter'),
-            ResourceTableColumns::createdAtHidden(),
+            TextColumn::make('created_at')
+                ->label('Reported')
+                ->dateTime('d M Y g:i A')
+                ->sortable(),
         ])->defaultSort('id', 'desc')->filters([
             SelectFilter::make('status')->options(fn (): array => collect(Report::statuses())->mapWithKeys(
                 static fn (string $status): array => [$status => __('report::messages.status_'.$status)]

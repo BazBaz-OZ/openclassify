@@ -76,6 +76,8 @@ class PanelQuickListingForm extends Component
 
     public string $price = '';
 
+    public int $quantity = 1;
+
     public string $description = '';
 
     public ?int $selectedCountryId = null;
@@ -168,7 +170,14 @@ class PanelQuickListingForm extends Component
         $this->validateVideos();
         $this->currentStep = 2;
 
-        if (! $this->isDetecting && ! $this->detectedCategoryId) {
+        $provider = (string) config('quick-listing.ai_provider', 'openai');
+        $providerKey = config("ai.providers.{$provider}.key");
+
+        if (
+            filled($providerKey)
+            && ! $this->isDetecting
+            && ! $this->detectedCategoryId
+        ) {
             $this->detectCategoryFromImage();
         }
     }
@@ -299,7 +308,7 @@ class PanelQuickListingForm extends Component
         $this->clearDraft();
 
         if (Route::has('panel.listings.edit')) {
-            $this->redirectRoute('panel.listings.edit', ['listing' => $listing->getKey()]);
+            $this->redirectRoute('panel.listings.edit', ['listing' => $listing->getRouteKey()]);
 
             return;
         }
@@ -645,6 +654,7 @@ class PanelQuickListingForm extends Component
             'price' => $this->isFreeStuff
                 ? ['nullable', 'numeric', 'min:0']
                 : ['required', 'numeric', 'min:0.01'],
+            'quantity' => ['required', 'integer', 'min:1', 'max:1000000'],
             'description' => ['required', 'string', 'max:1450'],
             'selectedCountryId' => ['required', 'integer', Rule::in(collect($this->countries)->pluck('id')->all())],
             'selectedDistrictId' => [
@@ -657,6 +667,9 @@ class PanelQuickListingForm extends Component
             'listingTitle.max' => 'The title may not exceed 70 characters.',
             'price.required' => 'A price is required.',
             'price.numeric' => 'The price must be numeric.',
+            'quantity.required' => 'Quantity is required.',
+            'quantity.integer' => 'Quantity must be a whole number.',
+            'quantity.min' => 'Quantity must be at least 1.',
             'description.required' => 'A description is required.',
             'description.max' => 'The description may not exceed 1450 characters.',
             'selectedCountryId.required' => 'Please choose a country.',
@@ -722,6 +735,8 @@ class PanelQuickListingForm extends Component
             'title' => trim($this->listingTitle),
             'description' => trim($this->description),
             'price' => $this->isFreeStuff ? 0.0 : (float) $this->price,
+            'quantity_total' => $this->quantity,
+            'quantity_available' => $this->quantity,
             'currency' => ListingPanelHelper::defaultCurrency(),
             'category_id' => $this->selectedCategoryId,
             'status' => 'active',
@@ -930,6 +945,7 @@ class PanelQuickListingForm extends Component
         if ($normalizedKeys->contains(fn ($key) => in_array($key, [
             'listingTitle',
             'price',
+            'quantity',
             'description',
             'selectedCountryId',
             'selectedDistrictId',
@@ -956,13 +972,29 @@ class PanelQuickListingForm extends Component
         $this->categorySearch = (string) ($draft['categorySearch'] ?? '');
         $this->selectedCategoryId = isset($draft['selectedCategoryId']) ? (int) $draft['selectedCategoryId'] : null;
         $this->activeParentCategoryId = isset($draft['activeParentCategoryId']) ? (int) $draft['activeParentCategoryId'] : null;
-        $this->detectedCategoryId = isset($draft['detectedCategoryId']) ? (int) $draft['detectedCategoryId'] : null;
-        $this->detectedConfidence = isset($draft['detectedConfidence']) ? (float) $draft['detectedConfidence'] : null;
-        $this->detectedReason = isset($draft['detectedReason']) ? (string) $draft['detectedReason'] : null;
-        $this->detectedError = isset($draft['detectedError']) ? (string) $draft['detectedError'] : null;
-        $this->detectedAlternatives = collect($draft['detectedAlternatives'] ?? [])->filter(fn ($id) => is_numeric($id))->map(fn ($id) => (int) $id)->values()->all();
+        $provider = (string) config('quick-listing.ai_provider', 'openai');
+        $providerKey = config("ai.providers.{$provider}.key");
+
+        if (filled($providerKey)) {
+            $this->detectedCategoryId = isset($draft['detectedCategoryId']) ? (int) $draft['detectedCategoryId'] : null;
+            $this->detectedConfidence = isset($draft['detectedConfidence']) ? (float) $draft['detectedConfidence'] : null;
+            $this->detectedReason = isset($draft['detectedReason']) ? (string) $draft['detectedReason'] : null;
+            $this->detectedError = isset($draft['detectedError']) ? (string) $draft['detectedError'] : null;
+            $this->detectedAlternatives = collect($draft['detectedAlternatives'] ?? [])
+                ->filter(fn ($id) => is_numeric($id))
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
+        } else {
+            $this->detectedCategoryId = null;
+            $this->detectedConfidence = null;
+            $this->detectedReason = null;
+            $this->detectedError = null;
+            $this->detectedAlternatives = [];
+        }
         $this->listingTitle = (string) ($draft['listingTitle'] ?? '');
         $this->price = (string) ($draft['price'] ?? '');
+        $this->quantity = max(1, (int) ($draft['quantity'] ?? 1));
         $this->description = (string) ($draft['description'] ?? '');
         $this->selectedDistrictId = isset($draft['selectedDistrictId']) ? (int) $draft['selectedDistrictId'] : null;
         $this->customFieldValues = is_array($draft['customFieldValues'] ?? null) ? $draft['customFieldValues'] : [];
@@ -982,10 +1014,11 @@ class PanelQuickListingForm extends Component
             'detectedCategoryId' => $this->detectedCategoryId,
             'detectedConfidence' => $this->detectedConfidence,
             'detectedReason' => $this->detectedReason,
-            'detectedError' => $this->detectedError,
+            'detectedError' => null,
             'detectedAlternatives' => $this->detectedAlternatives,
             'listingTitle' => $this->listingTitle,
             'price' => $this->price,
+            'quantity' => $this->quantity,
             'description' => $this->description,
             'selectedDistrictId' => $this->selectedDistrictId,
             'customFieldValues' => $this->customFieldValues,

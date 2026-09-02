@@ -176,9 +176,15 @@ class PanelController extends Controller
     public function markListingAsSold(Request $request, Listing $listing): RedirectResponse
     {
         $listing->assertOwnedBy($request->user());
-        $listing->markAsSold();
 
-        return back()->with('success', 'Listing marked as sold.');
+        $remaining = $listing->sellOne();
+
+        return back()->with(
+            'success',
+            $remaining > 0
+                ? "One unit sold. {$remaining} remaining."
+                : 'Listing sold out.'
+        );
     }
 
     public function republishListing(Request $request, Listing $listing): RedirectResponse

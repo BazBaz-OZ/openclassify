@@ -43,6 +43,12 @@
             @endif
         </a>
 
+        @if($listing->statusValue() === 'sold')
+            <div class="listing-card__sold-overlay" aria-label="Sold">
+                <span>SOLD</span>
+            </div>
+        @endif
+
         <div class="listing-card__flags">
             @if($isFeatured)
                 <span class="badge badge--solid">{{ __('promotion::messages.featured_badge') }}</span>

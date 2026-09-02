@@ -61,6 +61,10 @@
                         <div class="data-row__meta">
                             <span class="text-price">{{ $listing->panelPriceLabel() }}</span>
                             <span class="badge">{{ $meta['label'] }}</span>
+                            <span class="data-row__metric">
+                                Stock: {{ (int) $listing->getAttribute('quantity_available') }}
+                                / {{ (int) $listing->getAttribute('quantity_total') }}
+                            </span>
                             <span class="data-row__metric"><x-ui.icon name="eye"/>{{ (int) $listing->getAttribute('view_count') }}</span>
                             <span class="data-row__metric"><x-ui.icon name="heart"/>{{ (int) $listing->getAttribute('favorited_by_users_count') }}</span>
                             <span class="data-row__metric"><x-ui.icon name="map-pin"/>{{ $listing->panelLocationLabel() }}</span>
@@ -75,7 +79,9 @@
                         @if($listing->statusValue() !== 'sold')
                             <form method="POST" action="{{ route('panel.listings.mark-sold', $listing) }}">
                                 @csrf
-                                <button type="submit" class="button button--ghost button--small">{{ __('panel::messages.mark_sold') }}</button>
+                                <button type="submit" class="button button--ghost button--small">
+                                    {{ (int) $listing->getAttribute('quantity_total') > 1 ? 'Sold one' : __('panel::messages.mark_sold') }}
+                                </button>
                             </form>
                         @endif
 

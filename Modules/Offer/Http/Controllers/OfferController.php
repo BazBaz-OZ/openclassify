@@ -10,6 +10,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Modules\Listing\Models\Listing;
 use Modules\Notification\Models\UserNotification;
 use Modules\Offer\Models\Offer;
 
@@ -45,41 +46,46 @@ class OfferController extends Controller
         ]);
     }
 
-    public function store(Request $request, int $listing): RedirectResponse
+    public function store(Request $request, Listing $listing): RedirectResponse
     {
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:1', 'max:99999999'],
             'message' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $summary = ListingDirectory::find($listing);
+        if ($listing->statusValue() === 'sold') {
+            return back()->with('error', 'This listing has been sold and is no longer accepting offers.');
+        }
 
-        if ($summary === null || $summary['seller_id'] === null) {
+        $sellerId = $listing->getAttribute('user_id');
+
+        if ($sellerId === null) {
             abort(404);
         }
 
+        $sellerId = (int) $sellerId;
         $buyerId = (int) $request->user()->getKey();
 
-        if ($buyerId === $summary['seller_id']) {
+        if ($buyerId === $sellerId) {
             return back()->with('error', __('offer::messages.cannot_offer_own'));
         }
 
         $offer = Offer::place(
-            $listing,
+            (int) $listing->getKey(),
             $buyerId,
-            $summary['seller_id'],
+            $sellerId,
             (float) $validated['amount'],
             (string) $request->input('currency', config('app.default_currency', 'USD')),
             $validated['message'] ?? null,
         );
 
         UserNotification::publish(
-            $summary['seller_id'],
+            $sellerId,
             UserNotification::TYPE_OFFER,
             __('offer::messages.notification_received_title'),
             __('offer::messages.notification_received_body', [
                 'amount' => $offer->amountLabel(),
-                'listing' => $summary['title'],
+                'listing' => (string) $listing->getAttribute('title'),
             ]),
             route('panel.offers.index'),
         );

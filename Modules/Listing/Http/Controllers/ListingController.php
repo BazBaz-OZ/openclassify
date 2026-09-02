@@ -286,7 +286,7 @@ class ListingController extends Controller
                 'id' => (int) $listing->getKey(),
                 'label' => (string) $listing->title,
                 'meta' => (string) ($listing->city ?? ''),
-                'url' => route('listings.show', ['listing' => $listing->getKey()]),
+                'url' => route('listings.show', $listing),
             ])
             ->values();
 

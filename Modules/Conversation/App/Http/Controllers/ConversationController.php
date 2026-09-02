@@ -15,6 +15,7 @@ use Modules\Conversation\App\Models\Conversation;
 use Modules\Conversation\App\Models\ConversationMessage;
 use Modules\Conversation\App\Support\QuickMessageCatalog;
 use Modules\Listing\Models\Listing;
+use Modules\User\App\Models\User;
 
 class ConversationController extends Controller
 {
@@ -41,10 +42,16 @@ class ConversationController extends Controller
             );
 
             if ($selectedConversation && $markedRead) {
-                broadcast(new ConversationReadUpdated(
-                    $userId,
-                    $selectedConversation->readPayloadFor($userId),
-                ));
+                try {
+                    $pendingBroadcast = broadcast(new ConversationReadUpdated(
+                        $userId,
+                        $selectedConversation->readPayloadFor($userId),
+                    ));
+
+                    unset($pendingBroadcast);
+                } catch (\Throwable $exception) {
+                    report($exception);
+                }
             }
         }
 
@@ -61,6 +68,14 @@ class ConversationController extends Controller
     {
         $user = $request->user();
 
+        if ($listing->statusValue() === 'sold') {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'This listing has been sold.'], 422);
+            }
+
+            return back()->with('error', 'This listing has been sold and is no longer accepting new messages.');
+        }
+
         if (! $listing->user_id) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'A conversation cannot be started for this listing.'], 422);
@@ -75,6 +90,16 @@ class ConversationController extends Controller
             }
 
             return back()->with('error', 'You cannot message your own listing.');
+        }
+
+        $seller = User::query()->find((int) $listing->user_id);
+
+        if (! $seller || $user->messagingBlockedWith($seller)) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Messaging with this user is unavailable.'], 403);
+            }
+
+            return back()->with('error', 'Messaging with this user is unavailable.');
         }
 
         $messageBody = trim((string) $request->string('message'));
@@ -110,6 +135,16 @@ class ConversationController extends Controller
             abort(403);
         }
 
+        $partner = $conversation->partnerFor($userId);
+
+        if (! $partner || $user->messagingBlockedWith($partner)) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Messaging with this user is unavailable.'], 403);
+            }
+
+            return back()->with('error', 'Messaging with this user is unavailable.');
+        }
+
         $payload = $request->validate([
             'message' => ['required', 'string', 'max:2000'],
         ]);
@@ -136,6 +171,40 @@ class ConversationController extends Controller
             ->with('success', 'Message sent.');
     }
 
+    public function block(Request $request, Conversation $conversation): RedirectResponse
+    {
+        $user = $request->user();
+        $userId = (int) $user->getKey();
+
+        abort_unless($conversation->hasParticipant($userId), 403);
+
+        $partner = $conversation->partnerFor($userId);
+        abort_unless($partner, 404);
+
+        $user->blockUser($partner);
+
+        return redirect()
+            ->route('panel.inbox.index', ['conversation' => $conversation->getKey()])
+            ->with('success', 'User blocked.');
+    }
+
+    public function unblock(Request $request, Conversation $conversation): RedirectResponse
+    {
+        $user = $request->user();
+        $userId = (int) $user->getKey();
+
+        abort_unless($conversation->hasParticipant($userId), 403);
+
+        $partner = $conversation->partnerFor($userId);
+        abort_unless($partner, 404);
+
+        $user->unblockUser($partner);
+
+        return redirect()
+            ->route('panel.inbox.index', ['conversation' => $conversation->getKey()])
+            ->with('success', 'User unblocked.');
+    }
+
     public function read(Request $request, Conversation $conversation): JsonResponse
     {
         $userId = (int) $request->user()->getKey();
@@ -145,7 +214,13 @@ class ConversationController extends Controller
         $payload = $conversation->readPayloadFor($userId);
 
         if ($updated > 0) {
-            broadcast(new ConversationReadUpdated($userId, $payload))->toOthers();
+            try {
+                $pendingBroadcast = broadcast(new ConversationReadUpdated($userId, $payload));
+                $pendingBroadcast->toOthers();
+                unset($pendingBroadcast);
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
         }
 
         return response()->json($payload);
@@ -247,16 +322,26 @@ class ConversationController extends Controller
         foreach ($conversation->participantIds() as $participantId) {
             $event = new InboxMessageCreated(
                 $participantId,
-                $conversation->realtimePayloadFor($participantId, $message),
+                [
+                    'conversationId' => (int) $conversation->getKey(),
+                    'body' => (string) $message->body,
+                    'senderId' => (int) $message->sender_id,
+                    'createdAt' => $message->created_at?->toIso8601String() ?? now()->toIso8601String(),
+                ],
             );
 
-            if ($participantId === $senderId) {
-                broadcast($event)->toOthers();
+            try {
+                $pendingBroadcast = broadcast($event);
 
-                continue;
+                if ($participantId === $senderId) {
+                    $pendingBroadcast->toOthers();
+                }
+
+                // Force PendingBroadcast to dispatch inside the try/catch.
+                unset($pendingBroadcast);
+            } catch (\Throwable $exception) {
+                report($exception);
             }
-
-            broadcast($event);
         }
     }
 }

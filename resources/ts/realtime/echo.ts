@@ -1,18 +1,13 @@
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
 import type { InboxMessagePayload } from '../core/types';
 
 type InboxListener = (payload: InboxMessagePayload) => void;
 
-interface EchoChannel {
-    listen: (event: string, handler: (payload: unknown) => void) => EchoChannel;
-}
-
-interface EchoClient {
-    private: (channel: string) => EchoChannel;
-}
-
 declare global {
     interface Window {
-        Echo?: EchoClient;
+        Echo?: Echo<'reverb'>;
+        Pusher?: typeof Pusher;
     }
 }
 
@@ -40,29 +35,61 @@ function channelName(): string | null {
     return value === undefined || value === '' ? null : value;
 }
 
+function echoClient(): Echo<'reverb'> | null {
+    if (window.Echo !== undefined) {
+        return window.Echo;
+    }
+
+    const key = import.meta.env['VITE_REVERB_APP_KEY'];
+
+    if (!key) {
+        console.warn('Reverb app key is missing.');
+        return null;
+    }
+
+    const scheme = import.meta.env['VITE_REVERB_SCHEME'] ?? 'http';
+    const host = import.meta.env['VITE_REVERB_HOST'] ?? window.location.hostname;
+    const port = Number(import.meta.env['VITE_REVERB_PORT'] ?? 8080);
+
+    window.Pusher = Pusher;
+
+    window.Echo = new Echo({
+        broadcaster: 'reverb',
+        key,
+        wsHost: host,
+        wsPort: port,
+        wssPort: port,
+        forceTLS: scheme === 'https',
+        enabledTransports: ['ws', 'wss'],
+    });
+
+    return window.Echo;
+}
+
 function connect(): void {
     if (connected) {
         return;
     }
 
-    const client = window.Echo;
+    const client = echoClient();
     const channel = channelName();
 
-    if (client === undefined || channel === null) {
+    if (client === null || channel === null) {
         return;
     }
 
     connected = true;
 
-    client.private(channel).listen('.inbox.message', (payload: unknown) => {
-        if (!isInboxPayload(payload)) {
-            return;
-        }
+    client.private(channel)
+        .listen('.inbox.message.created', (payload: unknown) => {
+            if (!isInboxPayload(payload)) {
+                return;
+            }
 
-        for (const listener of listeners) {
-            listener(payload);
-        }
-    });
+            for (const listener of listeners) {
+                listener(payload);
+            }
+        });
 }
 
 export function subscribeToInbox(listener: InboxListener): () => void {

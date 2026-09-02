@@ -198,6 +198,21 @@
                             </div>
                         </div>
 
+                        <div class="field">
+                            <label class="field__label" for="listing-quantity">Quantity</label>
+                            <input
+                                id="listing-quantity"
+                                type="number"
+                                min="1"
+                                max="1000000"
+                                step="1"
+                                class="input"
+                                wire:model.blur="quantity"
+                            >
+                            <p class="field__hint">How many of this item do you have available?</p>
+                            @error('quantity')<p class="field__error">{{ $message }}</p>@enderror
+                        </div>
+
                         @if($listingCustomFields !== [])
                             <div class="field-set">
                                 <p class="field-set__legend">{{ __('site::messages.details') }}</p>
@@ -249,6 +264,10 @@
                             <div class="spec-list__row">
                                 <dt class="spec-list__label">{{ __('panel::messages.price') }}</dt>
                                 <dd class="spec-list__value">{{ $price }}</dd>
+                            </div>
+                            <div class="spec-list__row">
+                                <dt class="spec-list__label">Quantity</dt>
+                                <dd class="spec-list__value">{{ $quantity }}</dd>
                             </div>
                             <div class="spec-list__row">
                                 <dt class="spec-list__label">{{ __('panel::messages.location') }}</dt>

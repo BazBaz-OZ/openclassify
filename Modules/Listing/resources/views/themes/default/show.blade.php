@@ -12,7 +12,8 @@
     $country = trim((string) $listing->getAttribute('country'));
     $place = collect([$city, $country])->filter()->implode(', ');
     $createdAt = $listing->getAttribute('created_at');
-    $canContact = $viewer !== null && ! $isOwner && $sellerId !== null;
+    $isSold = $listing->statusValue() === 'sold';
+    $canContact = $viewer !== null && ! $isOwner && $sellerId !== null && ! $isSold;
 @endphp
 
 @section('content')
@@ -39,6 +40,12 @@
                             data-gallery-stage
                             fetchpriority="high"
                         >
+                        @if($isSold)
+                            <div class="gallery__sold-overlay" aria-label="Sold">
+                                <span>SOLD</span>
+                            </div>
+                        @endif
+
                         @if(count($gallery) > 1)
                             <button type="button" class="gallery__nav gallery__nav--previous" data-gallery-previous aria-label="{{ __('site::messages.back') }}">
                                 <x-ui.icon name="chevron-left"/>
@@ -81,8 +88,20 @@
                                     <span class="row" style="gap:var(--space-1)"><x-ui.icon name="clock" style="width:14px;height:14px"/><time datetime="{{ $createdAt->toIso8601String() }}">{{ $createdAt->diffForHumans() }}</time></span>
                                 @endif
                                 <span class="row" style="gap:var(--space-1)"><x-ui.icon name="eye" style="width:14px;height:14px"/>{{ trans_choice('site::messages.views', (int) $listing->getAttribute('view_count'), ['count' => (int) $listing->getAttribute('view_count')]) }}</span>
+                                @if((int) $listing->getAttribute('quantity_total') > 1)
+                                    <span class="badge">
+                                        {{ (int) $listing->getAttribute('quantity_available') }} available
+                                    </span>
+                                @endif
                             </div>
                         </div>
+
+                        @if($isSold)
+                            <div class="alert alert--sold" role="status">
+                                <strong>This item has been sold.</strong>
+                                <span>It is no longer available for new offers or enquiries.</span>
+                            </div>
+                        @endif
 
                         @if(filled($listing->getAttribute('description')))
                             <div class="stack stack--tight">
@@ -185,7 +204,9 @@
                                 </a>
                             @endif
                         @else
-                            <a href="{{ route('login') }}" class="button button--primary button--block">{{ __('site::messages.sign_in_to_message') }}</a>
+                            @unless($isSold)
+                                <a href="{{ route('login') }}" class="button button--primary button--block">{{ __('site::messages.sign_in_to_message') }}</a>
+                            @endunless
                         @endauth
 
                         <div class="row">
@@ -215,7 +236,7 @@
                     </div>
                 </section>
 
-                @if($canContact && $listing->getAttribute('price') !== null)
+                @if(! $isSold && $canContact && $listing->getAttribute('price') !== null)
                     <section class="card">
                         <div class="card__head">
                             <h2 class="card__title">{{ __('offer::messages.make_offer') }}</h2>

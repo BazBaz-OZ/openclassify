@@ -47,6 +47,7 @@ class Listing extends Model implements HasMedia
         'images', 'custom_fields',
         'contact_phone', 'contact_email', 'expires_at',
         'city', 'country', 'latitude', 'longitude', 'location', 'view_count',
+        'quantity_total', 'quantity_available',
     ];
 
     protected $casts = [
@@ -54,6 +55,8 @@ class Listing extends Model implements HasMedia
         'custom_fields' => 'array',
         'is_featured' => 'boolean',
         'view_count' => 'integer',
+        'quantity_total' => 'integer',
+        'quantity_available' => 'integer',
         'expires_at' => 'datetime',
         'price' => 'decimal:2',
         'latitude' => 'decimal:7',
@@ -69,6 +72,11 @@ class Listing extends Model implements HasMedia
             ->logFillable()
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
     }
 
     public function category()
@@ -678,8 +686,47 @@ class Listing extends Model implements HasMedia
     public function markAsSold(): void
     {
         $this->forceFill([
+            'quantity_available' => 0,
             'status' => 'sold',
         ])->save();
+    }
+
+    public function sellOne(): int
+    {
+        return (int) static::query()->getConnection()->transaction(function (): int {
+            $listing = static::query()
+                ->whereKey($this->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $available = max(0, (int) $listing->quantity_available);
+
+            if ($available <= 0) {
+                $listing->markAsSold();
+                $this->refresh();
+
+                return 0;
+            }
+
+            $available--;
+
+            $listing->forceFill([
+                'quantity_available' => $available,
+                'status' => $available === 0 ? 'sold' : 'active',
+            ])->save();
+
+            $this->refresh();
+
+            return $available;
+        });
+    }
+
+    public function quantitySold(): int
+    {
+        return max(
+            0,
+            (int) $this->quantity_total - (int) $this->quantity_available
+        );
     }
 
     public function republish(): void
@@ -703,6 +750,22 @@ class Listing extends Model implements HasMedia
             'city',
             'expires_at',
         ]);
+
+        if (array_key_exists('quantity_total', $attributes)) {
+            $oldTotal = max(1, (int) $this->quantity_total);
+            $oldAvailable = max(0, (int) $this->quantity_available);
+            $alreadySold = max(0, $oldTotal - $oldAvailable);
+
+            $newTotal = max(1, (int) $attributes['quantity_total']);
+            $newAvailable = max(0, $newTotal - $alreadySold);
+
+            $payload['quantity_total'] = $newTotal;
+            $payload['quantity_available'] = $newAvailable;
+
+            if ($newAvailable === 0) {
+                $payload['status'] = 'sold';
+            }
+        }
 
         if (array_key_exists('currency', $attributes)) {
             $payload['currency'] = ListingPanelHelper::normalizeCurrency($attributes['currency']);
@@ -737,6 +800,8 @@ class Listing extends Model implements HasMedia
             'longitude',
             'custom_fields',
             'expires_at',
+            'quantity_total',
+            'quantity_available',
         ]);
 
         $payload['currency'] = ListingPanelHelper::normalizeCurrency($data['currency'] ?? null);
