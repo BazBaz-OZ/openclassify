@@ -5,10 +5,34 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\Panel\App\Http\Controllers\ClearOutController;
 use Modules\Panel\App\Http\Controllers\PanelController;
+use Modules\Panel\App\Http\Controllers\WantedController;
 
 Route::middleware(['web', 'auth'])->prefix('panel')->name('panel.')->group(function () {
     Route::get('/', [PanelController::class, 'index'])->name('index');
     Route::get('/my-listings', [PanelController::class, 'listings'])->name('listings.index');
+
+    Route::get('/wanted', [WantedController::class, 'index'])
+        ->name('wanted.index');
+
+    Route::get('/wanted/create', [WantedController::class, 'create'])
+        ->middleware('verified')
+        ->name('wanted.create');
+
+    Route::post('/wanted', [WantedController::class, 'store'])
+        ->middleware('verified')
+        ->name('wanted.store');
+
+    Route::get('/wanted/{wanted}/edit', [WantedController::class, 'edit'])
+        ->name('wanted.edit');
+
+    Route::put('/wanted/{wanted}', [WantedController::class, 'update'])
+        ->name('wanted.update');
+
+    Route::post('/wanted/{wanted}/fulfill', [WantedController::class, 'fulfill'])
+        ->name('wanted.fulfill');
+
+    Route::post('/wanted/{wanted}/cancel', [WantedController::class, 'cancel'])
+        ->name('wanted.cancel');
 
     Route::get('/clear-outs', [ClearOutController::class, 'index'])
         ->name('clear-outs.index');

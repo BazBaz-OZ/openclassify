@@ -12,6 +12,11 @@ Route::middleware('web')->group(function () {
 
     Route::middleware('auth')->name('conversations.')->group(function () {
         Route::post('/listings/{listing}/conversation', [ConversationController::class, 'start'])->name('start');
+
+        Route::post(
+            '/listings/{listing}/wanted/{wanted}/conversation',
+            [ConversationController::class, 'startFromWanted']
+        )->name('wanted.start');
         Route::post('/conversations/{conversation}/messages', [ConversationController::class, 'send'])->name('messages.send');
         Route::post('/conversations/{conversation}/read', [ConversationController::class, 'read'])->name('read');
         Route::post('/conversations/{conversation}/block', [ConversationController::class, 'block'])->name('block');

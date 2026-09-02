@@ -75,7 +75,7 @@ class Conversation extends Model
     {
         return $query
             ->with([
-                'listing:id,title,price,currency,user_id',
+                'listing:id,title,slug,price,currency,user_id',
                 'buyer:id,name',
                 'seller:id,name',
                 'lastMessage',
@@ -123,7 +123,7 @@ class Conversation extends Model
     public function loadThread(): void
     {
         $this->load([
-            'listing:id,title,price,currency,user_id',
+            'listing:id,title,slug,price,currency,user_id',
             'messages' => fn ($query) => $query->with('sender:id,name')->ordered(),
         ]);
     }
@@ -198,7 +198,7 @@ class Conversation extends Model
     public function summaryPayloadFor(int $viewerId): array
     {
         $this->loadMissing([
-            'listing:id,title,price,currency,user_id',
+            'listing:id,title,slug,price,currency,user_id',
             'buyer:id,name,email',
             'seller:id,name,email',
             'lastMessage',

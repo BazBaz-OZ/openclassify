@@ -11,6 +11,7 @@ use Modules\Conversation\App\Models\Conversation;
 use Modules\Favorite\App\Models\FavoriteSearch;
 use Modules\Listing\Models\Listing;
 use Modules\Listing\Support\ListingCustomFieldSchemaBuilder;
+use Modules\Listing\Support\WantedMatcher;
 use Modules\Location\Models\City;
 use Modules\Location\Models\Country;
 use Modules\Location\Models\District;
@@ -197,6 +198,10 @@ class ListingController extends Controller
         $gallery = $listing->galleryImageData();
         $listingVideos = $listing->getRelation('videos');
         $relatedListings = $listing->relatedSuggestions(12);
+        $wantedMatches = WantedMatcher::wantedForListing(
+            $listing,
+            10
+        );
         $themePillCategories = Category::themePills(10);
         $breadcrumbCategories = $listing->category
             ? $listing->category->breadcrumbTrail()
@@ -246,6 +251,7 @@ class ListingController extends Controller
             'gallery',
             'listingVideos',
             'relatedListings',
+            'wantedMatches',
             'themePillCategories',
             'breadcrumbCategories',
         ));

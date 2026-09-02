@@ -14,6 +14,7 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\Features\SupportFileUploads\WithFileUploads;
 use Modules\Category\Models\Category;
 use Modules\Listing\Models\Listing;
+use Modules\Listing\Support\WantedMatcher;
 use Modules\Listing\Models\ListingCustomField;
 use Modules\Listing\Support\ListingCustomFieldSchemaBuilder;
 use Modules\Listing\Support\ListingPanelHelper;
@@ -289,6 +290,8 @@ class PanelQuickListingForm extends Component
             $this->validateCustomFieldsStep();
 
             $listing = $this->createListing();
+
+            WantedMatcher::notifyMatchesForListing($listing);
         } catch (ValidationException $exception) {
             $this->isPublishing = false;
             $this->handlePublishValidationFailure($exception);

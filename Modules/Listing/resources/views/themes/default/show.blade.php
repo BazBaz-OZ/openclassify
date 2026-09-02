@@ -316,6 +316,111 @@
             </aside>
         </div>
 
+        @if(
+            isset($wantedMatches)
+            && $wantedMatches->isNotEmpty()
+            && auth()->check()
+            && (int) auth()->id() === (int) $listing->user_id
+        )
+            <section class="card">
+                <div class="card__body">
+                    <div class="stack stack--tight">
+
+                        <div>
+                            <span class="badge badge--solid">
+                                WANTED MATCH
+                            </span>
+
+                            <h2 class="card__title">
+                                Someone wants something like this
+                            </h2>
+                        </div>
+
+                        <p class="text-muted">
+                            {{ $wantedMatches->count() }}
+                            active Wanted
+                            {{ $wantedMatches->count() === 1 ? 'post may' : 'posts may' }}
+                            match your listing.
+                        </p>
+
+                        <div class="stack stack--tight">
+                            @foreach($wantedMatches->take(3) as $wanted)
+                                <div class="card">
+                                    <div class="card__body card__body--tight">
+                                        <div class="stack stack--tight">
+
+                                            <div class="row row--between row--wrap">
+                                                <div>
+                                                    <a
+                                                        href="{{ route('wanted.show', $wanted) }}"
+                                                        class="text-link"
+                                                    >
+                                                        <strong>
+                                                            {{ $wanted->title }}
+                                                        </strong>
+                                                    </a>
+
+                                                    @if($wanted->city)
+                                                        <div class="text-muted">
+                                                            {{ $wanted->city }}
+                                                        </div>
+                                                    @endif
+                                                </div>
+
+                                                <span class="text-price">
+                                                    {{ $wanted->budgetLabel() }}
+                                                </span>
+                                            </div>
+
+                                            <div class="row row--wrap">
+                                                <a
+                                                    href="{{ route('wanted.show', $wanted) }}"
+                                                    class="button button--secondary button--small"
+                                                >
+                                                    View Wanted Post
+                                                </a>
+
+                                                <form
+                                                    method="POST"
+                                                    action="{{ route(
+                                                        'conversations.wanted.start',
+                                                        [
+                                                            'listing' => $listing,
+                                                            'wanted' => $wanted,
+                                                        ]
+                                                    ) }}"
+                                                >
+                                                    @csrf
+
+                                                    <button
+                                                        type="submit"
+                                                        class="button button--primary button--small"
+                                                    >
+                                                        Contact Buyer
+                                                    </button>
+                                                </form>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        @if($wantedMatches->count() > 3)
+                            <a
+                                href="{{ route('wanted.index') }}"
+                                class="button button--secondary"
+                            >
+                                View all Wanted posts
+                            </a>
+                        @endif
+
+                    </div>
+                </div>
+            </section>
+        @endif
+
         @if($relatedListings->isNotEmpty())
             <section class="section">
                 <div class="section__head">

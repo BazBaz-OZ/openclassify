@@ -15,6 +15,8 @@ use Modules\Conversation\App\Models\Conversation;
 use Modules\Conversation\App\Models\ConversationMessage;
 use Modules\Conversation\App\Support\QuickMessageCatalog;
 use Modules\Listing\Models\Listing;
+use Modules\Listing\Models\WantedPost;
+use Modules\Listing\Support\WantedMatcher;
 use Modules\User\App\Models\User;
 
 class ConversationController extends Controller
@@ -124,6 +126,78 @@ class ConversationController extends Controller
         return redirect()
             ->route('panel.inbox.index', array_merge($this->inboxFilters($request), ['conversation' => $conversation->getKey()]))
             ->with('success', $messageBody !== '' ? 'Message sent.' : 'Conversation started.');
+    }
+
+    public function startFromWanted(
+        Request $request,
+        Listing $listing,
+        WantedPost $wanted
+    ): RedirectResponse {
+        $user = $request->user();
+        $userId = (int) $user->getKey();
+
+        if ((int) $listing->user_id !== $userId) {
+            abort(403);
+        }
+
+        if ($listing->statusValue() !== 'active') {
+            return back()->with(
+                'error',
+                'Only active listings can contact Wanted buyers.'
+            );
+        }
+
+        if ($wanted->status !== WantedPost::STATUS_ACTIVE) {
+            return back()->with(
+                'error',
+                'This Wanted post is no longer active.'
+            );
+        }
+
+        if ((int) $wanted->user_id === $userId) {
+            return back()->with(
+                'error',
+                'You cannot contact yourself.'
+            );
+        }
+
+        $matches = WantedMatcher::wantedForListing(
+            $listing,
+            50
+        );
+
+        if (! $matches->contains(
+            fn (WantedPost $match): bool =>
+                (int) $match->getKey() === (int) $wanted->getKey()
+        )) {
+            return back()->with(
+                'error',
+                'This Wanted post no longer matches your listing.'
+            );
+        }
+
+        $buyer = User::query()->find((int) $wanted->user_id);
+
+        if (! $buyer || $user->messagingBlockedWith($buyer)) {
+            return back()->with(
+                'error',
+                'Messaging with this user is unavailable.'
+            );
+        }
+
+        $conversation = Conversation::openForListingBuyer(
+            $listing,
+            (int) $wanted->user_id
+        );
+
+        return redirect()
+            ->route('panel.inbox.index', [
+                'conversation' => $conversation->getKey(),
+            ])
+            ->with(
+                'success',
+                'Conversation opened with the Wanted buyer.'
+            );
     }
 
     public function send(Request $request, Conversation $conversation): RedirectResponse|JsonResponse
