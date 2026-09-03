@@ -59,13 +59,14 @@
         </div>
 
         @auth
-            <button
-                type="button"
+            <span
                 class="listing-card__favorite {{ $favorited ? 'is-active' : '' }}"
                 data-favorite-toggle="{{ route('favorites.listings.toggle', $listing) }}"
+                role="button"
+                tabindex="0"
                 aria-pressed="{{ $favorited ? 'true' : 'false' }}"
                 aria-label="{{ __('site::messages.favorites') }}"
-            ><x-ui.icon name="heart"/></button>
+            ><x-ui.icon name="heart"/></span>
         @else
             <a
                 href="{{ route('login') }}"

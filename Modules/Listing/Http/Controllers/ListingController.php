@@ -287,7 +287,7 @@ class ListingController extends Controller
             )
             ->orderByDesc('created_at')
             ->limit(5)
-            ->get(['id', 'title', 'city'])
+            ->get(['id', 'title', 'slug', 'city'])
             ->map(fn (Listing $listing): array => [
                 'type' => 'listing',
                 'id' => (int) $listing->getKey(),
