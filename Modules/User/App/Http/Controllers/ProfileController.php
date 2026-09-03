@@ -63,7 +63,14 @@ class ProfileController extends Controller
             ],
         );
 
-        return redirect()->route('panel.profile.edit')->with('status', 'profile-updated');
+        return redirect()
+            ->route('panel.profile.edit')
+            ->with(
+                'status',
+                $emailChanged
+                    ? 'profile-updated-email-verification'
+                    : 'profile-updated'
+            );
     }
 
     public function destroy(Request $request): RedirectResponse

@@ -39,7 +39,7 @@ class FavoriteController extends Controller
         $user = $request->user();
         $requiresLogin = ! $user;
 
-        $categories = Category::filterOptions();
+        $categories = Category::activeIdNameOptions();
 
         $favoriteListings = $this->emptyPaginator();
         $favoriteSearches = $this->emptyPaginator();

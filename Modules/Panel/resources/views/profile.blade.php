@@ -20,6 +20,17 @@
     <div class="stack stack--loose">
         <section class="card">
             <div class="card__head"><h2 class="card__title">{{ __('user::messages.profile') }}</h2></div>
+            <div class="card__body">
+                @if (session('status') === 'profile-updated-email-verification')
+                    <div class="alert alert--attention">
+                        Profile updated successfully. Please verify your new email address using the verification email we sent you.
+                    </div>
+                @elseif (session('status') === 'profile-updated')
+                    <div class="alert alert--success">
+                        Profile updated successfully.
+                    </div>
+                @endif
+            </div>
             <form method="POST" action="{{ route('profile.update') }}" class="card__body">
                 @csrf
                 @method('PATCH')
