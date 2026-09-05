@@ -115,14 +115,6 @@
             @endif
         </section>
 
-        <section class="garage-sale-teaser">
-            <div class="garage-sale-teaser__content">
-                <span class="badge badge--solid">{{ __('site::messages.coming_soon') }}</span>
-                <h2 class="title-section">{{ __('site::messages.virtual_garage_sales') }}</h2>
-                <p class="garage-sale-teaser__text">{{ __('site::messages.virtual_garage_sales_lead') }}</p>
-            </div>
-        </section>
-
         <section class="promo-banner">
             <h2 class="promo-banner__title">{{ __('site::messages.sell_something') }}</h2>
             <p class="promo-banner__text">{{ __('site::messages.promo_sell_lead') }}</p>

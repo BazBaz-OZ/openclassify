@@ -4,11 +4,18 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\Listing\Http\Controllers\ClearOutController;
 use Modules\Listing\Http\Controllers\ListingController;
+use Modules\Listing\Http\Controllers\VirtualGarageController;
 use Modules\Listing\Http\Controllers\WantedController;
 
 Route::middleware('web')->group(function () {
     Route::get('/clear-outs/{clearOut}', [ClearOutController::class, 'show'])
         ->name('clear-outs.show');
+
+    Route::get('/garages', [VirtualGarageController::class, 'index'])
+        ->name('virtual-garages.index');
+
+    Route::get('/garage/{virtualGarage}', [VirtualGarageController::class, 'show'])
+        ->name('virtual-garages.show');
 
     Route::get('/wanted', [WantedController::class, 'index'])
         ->name('wanted.index');

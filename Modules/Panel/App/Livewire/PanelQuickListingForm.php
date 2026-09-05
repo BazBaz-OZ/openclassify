@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\Panel\App\Livewire;
 
 use Illuminate\Support\Collection;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -16,9 +18,11 @@ use Modules\Category\Models\Category;
 use Modules\Listing\Models\Listing;
 use Modules\Listing\Support\WantedMatcher;
 use Modules\Listing\Models\ListingCustomField;
+use Modules\Listing\Models\VirtualGaragePhoto;
 use Modules\Listing\Support\ListingCustomFieldSchemaBuilder;
 use Modules\Listing\Support\ListingPanelHelper;
 use Modules\Listing\Support\QuickListingCategorySuggester;
+use Modules\Listing\Support\AiEntitlement;
 use Modules\Location\Models\City;
 use Modules\Location\Models\Country;
 use Modules\Location\Models\District;
@@ -34,6 +38,8 @@ class PanelQuickListingForm extends Component
     private const TOTAL_STEPS = 5;
 
     private const DRAFT_SESSION_KEY = 'panel_quick_listing_draft';
+
+    private const PUBLISH_TOKEN_SESSION_KEY = 'panel_quick_listing_publish_token';
 
     private const OTHER_CITY_ID = -1;
 
@@ -93,13 +99,45 @@ class PanelQuickListingForm extends Component
 
     public ?string $publishError = null;
 
+    public string $publishToken = '';
+
+    public ?int $garagePhotoId = null;
+
+    public ?int $virtualGarageId = null;
+
+    public string $garagePhotoUrl = '';
+
+    public string $garagePhotoName = '';
+
     public function mount(): void
     {
+        if ($this->publishToken === '') {
+            $this->publishToken = (string) session()->get(
+                self::PUBLISH_TOKEN_SESSION_KEY,
+                ''
+            );
+
+            if ($this->publishToken === '') {
+                $this->publishToken = (string) Str::uuid();
+
+                session()->put(
+                    self::PUBLISH_TOKEN_SESSION_KEY,
+                    $this->publishToken
+                );
+            }
+        }
+
         $this->loadCategories();
         $this->loadLocations();
         $this->selectAustralia();
         $this->hydrateLocationDefaultsFromProfile();
-        $this->restoreDraft();
+
+        if (request()->filled('garage_photo')) {
+            $this->loadGarageSourcePhoto();
+        } else {
+            $this->restoreDraft();
+        }
+
         $this->ensureSelectedDistrictBelongsToAustralia();
     }
 
@@ -120,6 +158,18 @@ class PanelQuickListingForm extends Component
     public function updatedPhotos(): void
     {
         $this->validatePhotos();
+
+        /*
+         * A new/changed photo must receive a fresh AI
+         * classification. Never reuse the previous
+         * photo's detected category.
+         */
+        $this->detectedCategoryId = null;
+        $this->detectedConfidence = null;
+        $this->detectedReason = null;
+        $this->detectedError = null;
+        $this->detectedAlternatives = [];
+        $this->activeParentCategoryId = null;
     }
 
     public function updatedVideos(): void
@@ -209,7 +259,86 @@ class PanelQuickListingForm extends Component
 
     public function detectCategoryFromImage(): void
     {
-        if ($this->photos === []) {
+        $image = null;
+
+        if (
+            isset($this->photos[0])
+            && $this->photos[0] instanceof TemporaryUploadedFile
+        ) {
+            $temporaryPhoto = $this->photos[0];
+
+            $temporaryPath =
+                $temporaryPhoto->getRealPath();
+
+            if (
+                is_string($temporaryPath)
+                && $temporaryPath !== ''
+                && is_file($temporaryPath)
+            ) {
+                $image = new UploadedFile(
+                    $temporaryPath,
+                    $temporaryPhoto
+                        ->getClientOriginalName(),
+                    $temporaryPhoto
+                        ->getMimeType(),
+                    null,
+                    true
+                );
+            }
+        } elseif ($this->garagePhotoId) {
+            $garagePhoto = VirtualGaragePhoto::query()
+                ->with('virtualGarage:id,user_id')
+                ->find($this->garagePhotoId);
+
+            $user = auth()->user();
+
+            if (
+                $garagePhoto
+                && $user
+                && $garagePhoto->virtualGarage
+                && (int) $garagePhoto->virtualGarage->user_id
+                    === (int) $user->getKey()
+            ) {
+                $path = Storage::disk(
+                    $garagePhoto->disk
+                )->path($garagePhoto->path);
+
+                if (is_file($path)) {
+                    $image = new UploadedFile(
+                        $path,
+                        $garagePhoto->original_name
+                            ?: basename($garagePhoto->path),
+                        $garagePhoto->mime_type ?: null,
+                        null,
+                        true
+                    );
+                }
+            }
+        }
+
+        if (! $image instanceof UploadedFile) {
+            return;
+        }
+
+        $user = auth()->user();
+
+        if (! $user) {
+            return;
+        }
+
+        $entitlement = app(
+            AiEntitlement::class
+        );
+
+        if (! $entitlement->canScan($user)) {
+            $this->detectedError =
+                $entitlement->exhaustedMessage(
+                    $user
+                );
+
+            $this->detectedReason = null;
+            $this->detectedAlternatives = [];
+
             return;
         }
 
@@ -218,17 +347,67 @@ class PanelQuickListingForm extends Component
         $this->detectedReason = null;
         $this->detectedAlternatives = [];
 
-        $result = app(QuickListingCategorySuggester::class)->suggestFromImage($this->photos[0]);
+        try {
+            $result = app(
+                QuickListingCategorySuggester::class
+            )->suggestFromImage($image);
 
-        $this->isDetecting = false;
-        $this->detectedCategoryId = $result['category_id'];
-        $this->detectedConfidence = $result['confidence'];
-        $this->detectedReason = $result['reason'];
-        $this->detectedError = $result['error'];
-        $this->detectedAlternatives = $result['alternatives'];
+            $this->detectedCategoryId =
+                $result['category_id'];
 
-        if ($this->detectedCategoryId) {
-            $this->selectCategory($this->detectedCategoryId);
+            $this->detectedConfidence =
+                $result['confidence'];
+
+            $this->detectedReason =
+                $result['reason'];
+
+            $this->detectedError =
+                $result['error'];
+
+            $this->detectedAlternatives =
+                $result['alternatives'];
+
+            if (blank($result['error'] ?? null)) {
+                \Log::info(
+                    'SMJ AI usage success hook reached',
+                    [
+                        'user_id' => $user->getKey(),
+                        'feature' => 'listing_category',
+                    ]
+                );
+
+                $entitlement->recordSuccess(
+                    $user,
+                    'listing_category',
+                    null,
+                    [
+                        'detected' =>
+                            (bool) (
+                                $result['detected']
+                                    ?? false
+                            ),
+                    ]
+                );
+            } else {
+                $entitlement->recordFailure(
+                    $user,
+                    'listing_category',
+                    null,
+                    [
+                        'error' =>
+                            (string)
+                            ($result['error'] ?? ''),
+                    ]
+                );
+            }
+
+            if ($this->detectedCategoryId) {
+                $this->selectCategory(
+                    $this->detectedCategoryId
+                );
+            }
+        } finally {
+            $this->isDetecting = false;
         }
     }
 
@@ -309,6 +488,10 @@ class PanelQuickListingForm extends Component
         $this->isPublishing = false;
         session()->flash('success', 'Your listing has been created successfully.');
         $this->clearDraft();
+
+        // A completed publish must never reuse this idempotency token.
+        session()->forget(self::PUBLISH_TOKEN_SESSION_KEY);
+        $this->publishToken = (string) Str::uuid();
 
         if (Route::has('panel.listings.edit')) {
             $this->redirectRoute('panel.listings.edit', ['listing' => $listing->getRouteKey()]);
@@ -601,13 +784,57 @@ class PanelQuickListingForm extends Component
         };
     }
 
+    private function loadGarageSourcePhoto(): void
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            abort(403);
+        }
+
+        $photoId = request()->integer('garage_photo');
+
+        if ($photoId < 1) {
+            return;
+        }
+
+        $photo = VirtualGaragePhoto::query()
+            ->with('virtualGarage:id,user_id')
+            ->findOrFail($photoId);
+
+        abort_unless(
+            $photo->virtualGarage
+                && (int) $photo->virtualGarage->user_id
+                    === (int) $user->getKey(),
+            404
+        );
+
+        abort_unless(
+            $photo->status === VirtualGaragePhoto::STATUS_PENDING,
+            404
+        );
+
+        $this->garagePhotoId = (int) $photo->getKey();
+        $this->virtualGarageId =
+            (int) $photo->virtual_garage_id;
+        $this->garagePhotoUrl = $photo->url();
+        $this->garagePhotoName =
+            (string) ($photo->original_name ?: 'Garage photo');
+
+        $this->photos = [];
+        $this->videos = [];
+        $this->currentStep = 1;
+    }
+
     private function validatePhotos(): void
     {
+        $hasGaragePhoto = $this->garagePhotoId !== null;
+
         $this->validate([
             'photos' => [
-                'required',
+                $hasGaragePhoto ? 'nullable' : 'required',
                 'array',
-                'min:1',
+                $hasGaragePhoto ? 'min:0' : 'min:1',
                 'max:'.config('quick-listing.max_photo_count', 20),
             ],
             'photos.*' => [
@@ -750,7 +977,20 @@ class PanelQuickListingForm extends Component
             'city' => $this->selectedDistrictName,
         ];
 
-        $listing = Listing::createFromFrontend($payload, $user->getKey());
+        $listing = Listing::query()
+            ->where('user_id', $user->getKey())
+            ->where('creation_token', $this->publishToken)
+            ->first();
+
+        if (! $listing) {
+            $payload['creation_token'] = $this->publishToken;
+
+            $listing = Listing::createFromFrontend(
+                $payload,
+                $user->getKey()
+            );
+        }
+
         $mediaDisk = $this->frontendMediaDisk();
 
         foreach ($this->photos as $photo) {
@@ -763,6 +1003,47 @@ class PanelQuickListingForm extends Component
                 $photo->getClientOriginalName(),
                 $mediaDisk
             );
+        }
+
+        if ($this->garagePhotoId) {
+            $garagePhoto = VirtualGaragePhoto::query()
+                ->with('virtualGarage:id,user_id')
+                ->findOrFail($this->garagePhotoId);
+
+            abort_unless(
+                $garagePhoto->virtualGarage
+                    && (int) $garagePhoto->virtualGarage->user_id
+                        === (int) $user->getKey(),
+                404
+            );
+
+            if (
+                $garagePhoto->status
+                    === VirtualGaragePhoto::STATUS_PENDING
+            ) {
+                $sourcePath = Storage::disk(
+                    $garagePhoto->disk
+                )->path($garagePhoto->path);
+
+                $listing->attachListingImage(
+                    $sourcePath,
+                    $garagePhoto->original_name
+                        ?: basename($garagePhoto->path),
+                    $mediaDisk
+                );
+
+                $garagePhoto->virtualGarage
+                    ->listings()
+                    ->syncWithoutDetaching([
+                        $listing->getKey(),
+                    ]);
+
+                $garagePhoto->forceFill([
+                    'listing_id' => $listing->getKey(),
+                    'status' =>
+                        VirtualGaragePhoto::STATUS_PROCESSED,
+                ])->save();
+            }
         }
 
         foreach ($this->videos as $index => $video) {

@@ -6,6 +6,7 @@
     $panelItems = [
         ['key' => 'dashboard', 'label' => __('panel::messages.dashboard'), 'icon' => 'chart', 'url' => route('panel.index'), 'count' => null],
         ['key' => 'listings', 'label' => __('panel::messages.my_listings'), 'icon' => 'tag', 'url' => route('panel.listings.index'), 'count' => \Modules\Listing\Models\Listing::query()->ownedByUser($panelUserId)->count()],
+        ['key' => 'virtual-garages', 'label' => 'Virtual Garages', 'icon' => 'tag', 'url' => route('panel.virtual-garages.index'), 'count' => \Modules\Listing\Models\VirtualGarage::query()->ownedByUser($panelUserId)->count()],
         ['key' => 'wanted', 'label' => 'My Wanted', 'icon' => 'search', 'url' => route('panel.wanted.index'), 'count' => \Modules\Listing\Models\WantedPost::query()->ownedByUser($panelUserId)->active()->count()],
         ['key' => 'offers', 'label' => __('offer::messages.offers'), 'icon' => 'sort', 'url' => route('panel.offers.index'), 'count' => \Modules\Offer\Models\Offer::pendingCountForSeller($panelUserId)],
         ['key' => 'inbox', 'label' => __('panel::messages.inbox'), 'icon' => 'mail', 'url' => route('panel.inbox.index'), 'count' => auth()->user()->unreadInboxCount()],

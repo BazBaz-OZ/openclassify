@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Panel\App\Http\Controllers\ClearOutController;
 use Modules\Panel\App\Http\Controllers\PanelController;
 use Modules\Panel\App\Http\Controllers\WantedController;
+use Modules\Panel\App\Http\Controllers\VirtualGarageController;
 
 Route::middleware(['web', 'auth'])->prefix('panel')->name('panel.')->group(function () {
     Route::get('/', [PanelController::class, 'index'])->name('index');
@@ -56,6 +57,42 @@ Route::middleware(['web', 'auth'])->prefix('panel')->name('panel.')->group(funct
 
     Route::post('/clear-outs/{clearOut}/complete', [ClearOutController::class, 'complete'])
         ->name('clear-outs.complete');
+
+    Route::get('/virtual-garages', [VirtualGarageController::class, 'index'])
+        ->name('virtual-garages.index');
+
+    Route::get('/virtual-garages/create', [VirtualGarageController::class, 'create'])
+        ->middleware('verified')
+        ->name('virtual-garages.create');
+
+    Route::post('/virtual-garages', [VirtualGarageController::class, 'store'])
+        ->middleware('verified')
+        ->name('virtual-garages.store');
+
+    Route::get('/virtual-garages/{virtualGarage}/edit', [VirtualGarageController::class, 'edit'])
+        ->name('virtual-garages.edit');
+
+    Route::put('/virtual-garages/{virtualGarage}', [VirtualGarageController::class, 'update'])
+        ->name('virtual-garages.update');
+
+    Route::post('/virtual-garages/{virtualGarage}/photos', [VirtualGarageController::class, 'uploadPhotos'])
+        ->name('virtual-garages.photos.store');
+
+    Route::post('/virtual-garages/{virtualGarage}/photos/{photo}/analyze', [VirtualGarageController::class, 'analyzePhoto'])
+        ->name('virtual-garages.photos.analyze');
+
+    Route::put('/virtual-garages/{virtualGarage}/items/{item}', [VirtualGarageController::class, 'updateItem'])
+        ->name('virtual-garages.items.update');
+
+    Route::post('/virtual-garages/{virtualGarage}/items/{item}/skip', [VirtualGarageController::class, 'skipItem'])
+        ->name('virtual-garages.items.skip');
+
+    Route::delete('/virtual-garages/{virtualGarage}/photos/{photo}', [VirtualGarageController::class, 'deletePhoto'])
+        ->name('virtual-garages.photos.destroy');
+
+    Route::post('/virtual-garages/{virtualGarage}/complete', [VirtualGarageController::class, 'complete'])
+        ->name('virtual-garages.complete');
+
     Route::get('/create-listing', [PanelController::class, 'create'])
         ->middleware('verified')
         ->name('listings.create');

@@ -490,3 +490,72 @@
 .card .alert.alert--attention * {
     color: #9b1c1c !important;
 }
+
+/* Sell My Junk AI category suggestion */
+.category-card.is-ai-suggested {
+    border-color: var(--color-text);
+    box-shadow: 0 0 0 2px var(--color-text);
+    position: relative;
+}
+
+.category-card__ai {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.35rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: var(--color-surface-muted);
+}
+
+.category-card__ai svg {
+    width: 0.8rem;
+    height: 0.8rem;
+}
+
+.nav-list__item.is-ai-suggested {
+    border-color: var(--color-text);
+    box-shadow: inset 3px 0 0 var(--color-text);
+}
+
+/* Stronger Sell My Junk brand treatment for AI suggestions */
+.category-card.is-ai-suggested {
+    border-color: #39b54a;
+    background: #eef9f0;
+    box-shadow: 0 0 0 2px #39b54a;
+}
+
+.category-card.is-ai-suggested .category-card__name {
+    color: #187a28;
+    font-weight: 700;
+}
+
+.category-card__ai {
+    background: #39b54a;
+    color: #ffffff;
+    border: 1px solid #2d963c;
+    font-weight: 700;
+}
+
+.category-card__ai svg {
+    color: #ffffff;
+}
+
+.nav-list__item.is-ai-suggested {
+    background: #eef9f0;
+    border-color: #39b54a;
+    box-shadow: inset 4px 0 0 #39b54a;
+}
+
+.nav-list__item.is-ai-suggested > span:first-child {
+    color: #187a28;
+    font-weight: 700;
+}
+
+.nav-list__item.is-ai-suggested .badge {
+    background: #39b54a;
+    color: #ffffff;
+    border-color: #39b54a;
+}

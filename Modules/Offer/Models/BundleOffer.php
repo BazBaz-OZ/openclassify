@@ -11,6 +11,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Modules\Listing\Models\ClearOut;
 use Modules\Listing\Models\Listing;
+use Modules\Listing\Models\VirtualGarage;
 use Modules\User\App\Models\User;
 use RuntimeException;
 
@@ -25,6 +26,7 @@ class BundleOffer extends Model
 
     protected $fillable = [
         'clear_out_id',
+        'virtual_garage_id',
         'buyer_id',
         'seller_id',
         'amount',
@@ -44,6 +46,11 @@ class BundleOffer extends Model
     public function clearOut()
     {
         return $this->belongsTo(ClearOut::class);
+    }
+
+    public function virtualGarage()
+    {
+        return $this->belongsTo(VirtualGarage::class);
     }
 
     public function buyer()
@@ -67,7 +74,7 @@ class BundleOffer extends Model
     }
 
     public static function place(
-        ClearOut $clearOut,
+        ClearOut|VirtualGarage $source,
         int $buyerId,
         int $sellerId,
         array $listings,
@@ -76,7 +83,7 @@ class BundleOffer extends Model
         ?string $message
     ): self {
         return DB::transaction(function () use (
-            $clearOut,
+            $source,
             $buyerId,
             $sellerId,
             $listings,
@@ -84,10 +91,14 @@ class BundleOffer extends Model
             $currency,
             $message
         ): self {
+            $sourceColumn = $source instanceof VirtualGarage
+                ? 'virtual_garage_id'
+                : 'clear_out_id';
+
             // A new bundle replaces any previous pending bundle from
-            // the same buyer for this Clear Out.
+            // the same buyer for this source.
             static::query()
-                ->where('clear_out_id', $clearOut->getKey())
+                ->where($sourceColumn, $source->getKey())
                 ->where('buyer_id', $buyerId)
                 ->pending()
                 ->update([
@@ -96,7 +107,12 @@ class BundleOffer extends Model
                 ]);
 
             $bundle = static::query()->create([
-                'clear_out_id' => $clearOut->getKey(),
+                'clear_out_id' => $source instanceof ClearOut
+                    ? $source->getKey()
+                    : null,
+                'virtual_garage_id' => $source instanceof VirtualGarage
+                    ? $source->getKey()
+                    : null,
                 'buyer_id' => $buyerId,
                 'seller_id' => $sellerId,
                 'amount' => $amount,
@@ -125,6 +141,7 @@ class BundleOffer extends Model
             ->where('seller_id', $sellerId)
             ->with([
                 'clearOut:id,title,slug',
+                'virtualGarage:id,title,slug',
                 'buyer:id,name',
                 'items.listing:id,title,slug,price,currency',
             ])
@@ -141,6 +158,7 @@ class BundleOffer extends Model
             ->where('buyer_id', $buyerId)
             ->with([
                 'clearOut:id,title,slug',
+                'virtualGarage:id,title,slug',
                 'seller:id,name',
                 'items.listing:id,title,slug,price,currency',
             ])

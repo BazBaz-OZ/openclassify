@@ -16,7 +16,7 @@
     <div class="panel-head__text">
         <h1 class="title-page">Bundle Offers</h1>
         <p class="text-muted">
-            Offers covering multiple items from the same Clear Out.
+            Offers covering multiple items from the same Clear Out or Virtual Garage.
         </p>
     </div>
 </header>
@@ -67,9 +67,13 @@
 
                     <div class="data-row__main">
                         <p class="data-row__title">
-                            @if($bundle->clearOut)
+                            @if($bundle->virtualGarage)
+                                <a href="{{ route('virtual-garages.show', $bundle->virtualGarage) }}">
+                                    Virtual Garage: {{ $bundle->virtualGarage->title }}
+                                </a>
+                            @elseif($bundle->clearOut)
                                 <a href="{{ route('clear-outs.show', $bundle->clearOut) }}">
-                                    {{ $bundle->clearOut->title }}
+                                    Clear Out: {{ $bundle->clearOut->title }}
                                 </a>
                             @else
                                 Bundle Offer #{{ $bundle->getKey() }}
@@ -230,7 +234,7 @@
     <x-ui.empty-state
         icon="sort"
         title="No bundle offers"
-        text="Bundle offers will appear here when buyers make an offer on multiple items from the same Clear Out."
+        text="Bundle offers will appear here when buyers make an offer on multiple items from the same Clear Out or Virtual Garage."
     />
 @endif
 @endsection

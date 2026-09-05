@@ -98,6 +98,7 @@
             <div class="card__body card__body--tight">
                 <a href="{{ route('panel.listings.create') }}" class="nav-list__item"><span>{{ __('panel::messages.new_listing') }}</span><x-ui.icon name="chevron-right"/></a>
                 <a href="{{ route('panel.clear-outs.index') }}" class="nav-list__item"><span>My Clear Outs</span><x-ui.icon name="chevron-right"/></a>
+                <a href="{{ route('panel.virtual-garages.index') }}" class="nav-list__item"><span>My Virtual Garages</span><x-ui.icon name="chevron-right"/></a>
                 <a href="{{ route('panel.promotions.index') }}" class="nav-list__item"><span>{{ __('promotion::messages.promotions') }}</span><x-ui.icon name="chevron-right"/></a>
                 <a href="{{ route('panel.offers.index') }}" class="nav-list__item"><span>{{ __('offer::messages.offers') }}</span><x-ui.icon name="chevron-right"/></a>
                 <a href="{{ route('sellers.show', auth()->id()) }}" class="nav-list__item"><span>{{ __('site::messages.view_profile') }}</span><x-ui.icon name="chevron-right"/></a>

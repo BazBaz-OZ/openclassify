@@ -289,6 +289,13 @@
                         class="category-bar__link {{ (int) request('category') === (int) $navCategory['id'] ? 'is-active' : '' }}"
                     >{{ $navCategory['name'] }}</a>
                 @endforeach
+
+                <a
+                    href="{{ route('virtual-garages.index') }}"
+                    class="category-bar__link {{ request()->routeIs('virtual-garages.*') ? 'is-active' : '' }}"
+                >
+                    Virtual Garages
+                </a>
             </div>
         </div>
     </nav>
@@ -315,6 +322,8 @@
                     <a href="{{ route('home') }}" class="nav-list__item"><span>{{ __('site::messages.home') }}</span><x-ui.icon name="chevron-right"/></a>
                     <a href="{{ route('listings.index') }}" class="nav-list__item"><span>{{ __('site::messages.all_listings') }}</span><x-ui.icon name="chevron-right"/></a>
                     <a href="{{ route('categories.index') }}" class="nav-list__item"><span>{{ __('site::messages.categories') }}</span><x-ui.icon name="chevron-right"/></a>
+                    <a href="{{ route('virtual-garages.index') }}" class="nav-list__item"><span>Virtual Garages</span><x-ui.icon name="chevron-right"/></a>
+                    <a href="{{ route('membership') }}" class="nav-list__item"><span>Membership & Pricing</span><x-ui.icon name="chevron-right"/></a>
                     <a href="{{ route('promotions.plans') }}" class="nav-list__item"><span>{{ __('promotion::messages.plans') }}</span><x-ui.icon name="chevron-right"/></a>
                 </div>
             </div>

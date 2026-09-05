@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\Listing\Models\ClearOut;
 use Modules\Listing\Models\Listing;
+use Modules\Listing\Models\VirtualGarage;
 use Modules\Notification\Models\UserNotification;
 use Modules\Offer\Models\BundleOffer;
 
@@ -128,6 +129,110 @@ class BundleOfferController extends Controller
                 .$listings->count()
                 .' items from '
                 .$clearOut->title.'.',
+            route('panel.bundle-offers.index'),
+        );
+
+        return redirect()
+            ->route('panel.bundle-offers.index', [
+                'direction' => 'sent',
+            ])
+            ->with('success', 'Bundle offer sent.');
+    }
+
+    public function storeVirtualGarage(
+        Request $request,
+        VirtualGarage $virtualGarage
+    ): RedirectResponse {
+        if ($virtualGarage->status !== VirtualGarage::STATUS_ACTIVE) {
+            return back()->with(
+                'error',
+                'This Virtual Garage is no longer accepting bundle offers.'
+            );
+        }
+
+        $sellerId = (int) $virtualGarage->user_id;
+        $buyerId = (int) $request->user()->getKey();
+
+        if ($buyerId === $sellerId) {
+            return back()->with(
+                'error',
+                'You cannot make a bundle offer on your own Virtual Garage.'
+            );
+        }
+
+        $validated = $request->validate([
+            'listing_ids' => [
+                'required',
+                'array',
+                'min:2',
+                'max:50',
+            ],
+            'listing_ids.*' => [
+                'required',
+                'integer',
+                'distinct',
+            ],
+            'amount' => [
+                'required',
+                'numeric',
+                'min:1',
+                'max:99999999',
+            ],
+            'message' => [
+                'nullable',
+                'string',
+                'max:500',
+            ],
+        ], [
+            'listing_ids.min' =>
+                'Select at least two items for a bundle offer.',
+        ]);
+
+        $ids = collect($validated['listing_ids'])
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $listings = $virtualGarage->listings()
+            ->where('listings.user_id', $sellerId)
+            ->whereIn('listings.id', $ids->all())
+            ->where('listings.status', 'active')
+            ->where('listings.quantity_available', '>', 0)
+            ->get();
+
+        if ($listings->count() !== $ids->count()) {
+            return back()
+                ->withInput()
+                ->with(
+                    'error',
+                    'One or more selected items are no longer available.'
+                );
+        }
+
+        $currency = (string) (
+            $listings->first()?->currency
+            ?: config('app.default_currency', 'AUD')
+        );
+
+        $bundle = BundleOffer::place(
+            $virtualGarage,
+            $buyerId,
+            $sellerId,
+            $listings->all(),
+            (float) $validated['amount'],
+            $currency,
+            $validated['message'] ?? null,
+        );
+
+        UserNotification::publish(
+            $sellerId,
+            UserNotification::TYPE_OFFER,
+            'New Virtual Garage offer',
+            'You received a '.$bundle->amountLabel()
+                .' bundle offer for '
+                .$listings->count()
+                .' items from '
+                .$virtualGarage->title.'.',
             route('panel.bundle-offers.index'),
         );
 

@@ -49,6 +49,7 @@ class Listing extends Model implements HasMedia
         'city', 'country', 'latitude', 'longitude', 'location', 'view_count',
         'quantity_total', 'quantity_available',
         'clear_out_id',
+        'creation_token',
     ];
 
     protected $casts = [
@@ -88,6 +89,16 @@ class Listing extends Model implements HasMedia
     public function clearOut()
     {
         return $this->belongsTo(ClearOut::class);
+    }
+
+    public function virtualGarages()
+    {
+        return $this->belongsToMany(
+            VirtualGarage::class,
+            'virtual_garage_listing'
+        )
+            ->withPivot('sort_order')
+            ->withTimestamps();
     }
 
     public function user()

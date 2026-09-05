@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use Laravel\Cashier\Cashier;
+use Modules\User\App\Models\User;
+
 use App\Mail\MicrosoftGraphTransport;
 
 use BezhanSalleh\LanguageSwitch\LanguageSwitch;
@@ -21,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Cashier::useCustomerModel(User::class);
+
         Mail::extend('graph', function (array $config = []) {
             return new MicrosoftGraphTransport(
                 tenantId: (string) config('services.microsoft_graph.tenant_id'),

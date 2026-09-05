@@ -55,6 +55,31 @@
 
                         <div wire:loading wire:target="photos" class="text-muted">{{ __('panel::messages.uploading') }}</div>
 
+                        @if($garagePhotoUrl !== '')
+                            <div class="upload__grid">
+                                <figure
+                                    class="upload__preview"
+                                    style="position:relative"
+                                >
+                                    <img
+                                        src="{{ $garagePhotoUrl }}"
+                                        alt="{{ $garagePhotoName }}"
+                                    >
+
+                                    <span
+                                        class="badge badge--positive"
+                                        style="
+                                            position:absolute;
+                                            bottom:6px;
+                                            left:6px;
+                                        "
+                                    >
+                                        Virtual Garage
+                                    </span>
+                                </figure>
+                            </div>
+                        @endif
+
                         @if($photos !== [])
                             <div class="upload__grid">
                                 @foreach($photos as $index => $photo)
@@ -95,6 +120,40 @@
                     </div>
                 @elseif($currentStep === 2)
                     <div class="stack">
+                        @php
+                            $aiUser = auth()->user();
+
+                            $aiEntitlement = $aiUser
+                                ? app(
+                                    \Modules\Listing\Support\AiEntitlement::class
+                                )
+                                : null;
+
+                            $aiAllowance = $aiEntitlement
+                                ? $aiEntitlement->allowance($aiUser)
+                                : 0;
+
+                            $aiRemaining = $aiEntitlement
+                                ? $aiEntitlement->remaining($aiUser)
+                                : 0;
+                        @endphp
+
+                        @if($aiEntitlement)
+                            <div class="alert">
+                                <x-ui.icon name="sparkle"/>
+
+                                <span>
+                                    AI scans:
+                                    <strong>
+                                        {{ $aiRemaining }}
+                                        of
+                                        {{ $aiAllowance }}
+                                    </strong>
+                                    remaining
+                                </span>
+                            </div>
+                        @endif
+
                         @if($detectedError)
                             <div class="alert alert--caution"><x-ui.icon name="sparkle"/><span>{{ $detectedError }}</span></div>
                         @elseif($detectedCategoryId)
@@ -109,24 +168,82 @@
                             </span>
                         </div>
 
+                        @php
+                            /*
+                             * Work out which top-level category contains
+                             * the AI suggested category.
+                             */
+                            $aiSuggestedCategory = collect($categories)
+                                ->firstWhere(
+                                    'id',
+                                    $detectedCategoryId
+                                );
+
+                            $aiSuggestedRootId =
+                                $aiSuggestedCategory
+                                    ? (
+                                        $aiSuggestedCategory['parent_id']
+                                            ?: $aiSuggestedCategory['id']
+                                    )
+                                    : null;
+                        @endphp
+
                         @if($activeParentCategoryId)
                             <div class="row">
-                                <button type="button" class="button button--ghost button--small" wire:click="backToRootCategories">
+                                <button
+                                    type="button"
+                                    class="button button--ghost button--small"
+                                    wire:click="backToRootCategories"
+                                >
                                     <x-ui.icon name="arrow-left"/>
-                                    <span>{{ __('site::messages.all_categories') }}</span>
+                                    <span>
+                                        {{ __('site::messages.all_categories') }}
+                                    </span>
                                 </button>
-                                <span class="text-muted">{{ $this->currentParentName }}</span>
+
+                                <span class="text-muted">
+                                    {{ $this->currentParentName }}
+                                </span>
                             </div>
 
                             <div class="nav-list">
                                 @foreach($this->currentCategories as $category)
+                                    @php
+                                        $isAiSuggested =
+                                            $detectedCategoryId ===
+                                            $category['id'];
+
+                                        $isSelected =
+                                            $selectedCategoryId ===
+                                            $category['id'];
+                                    @endphp
+
                                     <button
                                         type="button"
-                                        class="nav-list__item {{ $selectedCategoryId === $category['id'] ? 'is-active' : '' }}"
-                                        wire:click="selectCategory({{ $category['id'] }})"
+                                        class="
+                                            nav-list__item
+                                            {{ $isSelected ? 'is-active' : '' }}
+                                            {{ $isAiSuggested ? 'is-ai-suggested' : '' }}
+                                        "
+                                        wire:click="
+                                            selectCategory(
+                                                {{ $category['id'] }}
+                                            )
+                                        "
                                     >
-                                        <span>{{ $category['name'] }}</span>
-                                        @if($selectedCategoryId === $category['id'])
+                                        <span class="row">
+                                            <span>
+                                                {{ $category['name'] }}
+                                            </span>
+
+                                            @if($isAiSuggested)
+                                                <span class="badge">
+                                                    AI suggestion
+                                                </span>
+                                            @endif
+                                        </span>
+
+                                        @if($isSelected)
                                             <x-ui.icon name="check"/>
                                         @else
                                             <x-ui.icon name="chevron-right"/>
@@ -137,9 +254,49 @@
                         @else
                             <div class="grid grid--categories">
                                 @foreach($this->rootCategories as $category)
-                                    <button type="button" class="category-card" wire:click="enterCategory({{ $category['id'] }})">
-                                        <span class="category-card__icon"><x-ui.icon name="grid"/></span>
-                                        <span class="category-card__name">{{ $category['name'] }}</span>
+                                    @php
+                                        $isAiSuggestedRoot =
+                                            $aiSuggestedRootId ===
+                                            $category['id'];
+                                    @endphp
+
+                                    <button
+                                        type="button"
+                                        class="
+                                            category-card
+                                            {{ $isAiSuggestedRoot
+                                                ? 'is-ai-suggested'
+                                                : '' }}
+                                        "
+                                        wire:click="
+                                            enterCategory(
+                                                {{ $category['id'] }}
+                                            )
+                                        "
+                                    >
+                                        <span class="category-card__icon">
+                                            @if(filled($category['icon'] ?? null))
+                                                <img
+                                                    src="{{ asset(
+                                                        $category['icon']
+                                                    ) }}"
+                                                    alt=""
+                                                >
+                                            @else
+                                                <x-ui.icon name="grid"/>
+                                            @endif
+                                        </span>
+
+                                        <span class="category-card__name">
+                                            {{ $category['name'] }}
+                                        </span>
+
+                                        @if($isAiSuggestedRoot)
+                                            <span class="category-card__ai">
+                                                <x-ui.icon name="sparkle"/>
+                                                AI suggestion
+                                            </span>
+                                        @endif
                                     </button>
                                 @endforeach
                             </div>

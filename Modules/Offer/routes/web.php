@@ -22,6 +22,13 @@ Route::middleware(['web', 'auth'])->group(function (): void {
         ->name('bundle-offers.store');
 
     Route::post(
+        '/garage/{virtualGarage}/bundle-offers',
+        [BundleOfferController::class, 'storeVirtualGarage']
+    )
+        ->middleware('throttle:20,1')
+        ->name('virtual-garage.bundle-offers.store');
+
+    Route::post(
         '/bundle-offers/{bundleOffer}/accept',
         [BundleOfferController::class, 'accept']
     )->name('bundle-offers.accept');
