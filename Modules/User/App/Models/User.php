@@ -348,11 +348,11 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerif
             ->withQueryString();
     }
 
-    public function panelListingOptions(): Collection
+    public function panelListingOptions(): \Illuminate\Support\Collection
     {
         return $this->listings()
             ->latest('id')
-            ->get(['id', 'title', 'status']);
+            ->pluck('title', 'id');
     }
 
     public function loadPanelProfile(): self

@@ -45,19 +45,63 @@ Route::middleware('web')->group(function () {
                 'Stripe price is not configured.'
             );
 
-            return $request->user()
+            $user = $request->user();
+            $subscription = $user->subscription('default');
+
+            /*
+             * Existing paid customer:
+             * change the price on the existing subscription instead of
+             * creating another Stripe subscription.
+             */
+            if ($subscription && $subscription->valid()) {
+                if ($subscription->hasPrice($priceId)) {
+                    return redirect()->route(
+                        'membership',
+                        [
+                            'checkout' => 'current',
+                            'plan' => $plan,
+                        ]
+                    );
+                }
+
+                $subscription->swap($priceId);
+
+                return redirect()->route(
+                    'membership',
+                    [
+                        'checkout' => 'updated',
+                        'plan' => $plan,
+                    ]
+                );
+            }
+
+            /*
+             * Free customer:
+             * start a new Stripe Checkout subscription.
+             */
+            return $user
                 ->newSubscription(
                     'default',
                     $priceId
                 )
                 ->checkout([
                     'success_url' =>
-                        route('membership')
-                        .'?checkout=success',
+                        route(
+                            'membership',
+                            [
+                                'checkout' => 'success',
+                                'plan' => $plan,
+                            ]
+                        ),
 
                     'cancel_url' =>
-                        route('membership')
-                        .'?checkout=cancelled',
+                        route(
+                            'membership',
+                            [
+                                'checkout' => 'cancelled',
+                                'plan' => $plan,
+                            ]
+                        ),
                 ]);
         }
     )

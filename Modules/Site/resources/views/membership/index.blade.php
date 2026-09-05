@@ -190,15 +190,34 @@ Choose the Sell My Junk plan that suits how much you sell.
 <div class="membership-page">
     <div class="shell">
 
-        @if(request('checkout') === 'success')
+        @if(in_array(
+            request('checkout'),
+            ['success', 'updated'],
+            true
+        ))
             <div
                 class="alert alert--positive"
                 style="margin-bottom:24px;"
             >
                 <x-ui.icon name="check"/>
                 <span>
-                    Payment completed. Your membership
-                    may take a few seconds to update.
+                    @if($currentPlan === 'member')
+                        Welcome to SMJ Member — your membership is active.
+                    @elseif($currentPlan === 'pro')
+                        Welcome to SMJ Pro — your membership is active.
+                    @else
+                        Your membership has been updated successfully.
+                    @endif
+                </span>
+            </div>
+        @elseif(request('checkout') === 'current')
+            <div
+                class="alert alert--positive"
+                style="margin-bottom:24px;"
+            >
+                <x-ui.icon name="check"/>
+                <span>
+                    You are already on this plan.
                 </span>
             </div>
         @elseif(request('checkout') === 'cancelled')
@@ -317,6 +336,7 @@ Choose the Sell My Junk plan that suits how much you sell.
                                     membership-button
                                     membership-button--current
                                 "
+                                aria-disabled="true"
                             >
                                 Current plan
                             </span>
@@ -326,11 +346,27 @@ Choose the Sell My Junk plan that suits how much you sell.
                                     membership-button
                                     membership-button--current
                                 "
+                                aria-disabled="true"
                             >
-                                Free
+                                Included free
                             </span>
                         @else
                             @auth
+                                @php
+                                    $actionLabel = match (true) {
+                                        $currentPlan === 'member'
+                                            && $key === 'pro'
+                                            => 'Upgrade to SMJ Pro',
+
+                                        $currentPlan === 'pro'
+                                            && $key === 'member'
+                                            => 'Downgrade to SMJ Member',
+
+                                        default
+                                            => 'Choose ' . $plan['name'],
+                                    };
+                                @endphp
+
                                 <form
                                     method="POST"
                                     action="{{ route(
@@ -350,8 +386,7 @@ Choose the Sell My Junk plan that suits how much you sell.
                                             }}
                                         "
                                     >
-                                        Upgrade to
-                                        {{ $plan['name'] }}
+                                        {{ $actionLabel }}
                                     </button>
                                 </form>
                             @else
@@ -365,7 +400,8 @@ Choose the Sell My Junk plan that suits how much you sell.
                                         }}
                                     "
                                 >
-                                    Sign in to upgrade
+                                    Sign in to choose
+                                    {{ $plan['name'] }}
                                 </a>
                             @endauth
                         @endif

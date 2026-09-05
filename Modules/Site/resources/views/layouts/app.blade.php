@@ -106,7 +106,34 @@
             padding: 12px 14px;
             color: #777;
         }
-    </style>
+
+    .brand--smj {
+        display: inline-flex;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .brand--smj .brand__logo {
+        display: block;
+        width: auto;
+        height: 44px;
+        max-width: 230px;
+        object-fit: contain;
+    }
+
+    .site-footer .brand--smj .brand__logo {
+        height: 52px;
+        max-width: 270px;
+    }
+
+    @media (max-width: 700px) {
+        .brand--smj .brand__logo {
+            height: 36px;
+            max-width: 180px;
+        }
+    }
+
+</style>
 
 <style>
 
@@ -146,15 +173,16 @@
                     aria-label="{{ __('site::messages.menu') }}"
                 ><x-ui.icon name="menu"/></button>
 
-                <a href="{{ route('home') }}" class="brand">
-                    <span class="brand__mark">
-                        @if($siteLogoUrl)
-                            <img src="{{ $siteLogoUrl }}" alt="">
-                        @else
-                            {{ mb_substr($siteName, 0, 1) }}
-                        @endif
-                    </span>
-                    <span class="brand__name">{{ $siteName }}</span>
+                <a
+                    href="{{ route('home') }}"
+                    class="brand brand--smj"
+                    aria-label="{{ $siteName }}"
+                >
+                    <img
+                        src="{{ asset('images/brand/sell-my-junk-logo.png') }}"
+                        alt="{{ $siteName }}"
+                        class="brand__logo"
+                    >
                 </a>
             </div>
 
@@ -384,11 +412,16 @@
     <div class="shell shell--wide">
         <div class="site-footer__grid">
             <div class="site-footer__column">
-                <a href="{{ route('home') }}" class="brand">
-                    <span class="brand__mark">
-                        @if($siteLogoUrl)<img src="{{ $siteLogoUrl }}" alt="">@else{{ mb_substr($siteName, 0, 1) }}@endif
-                    </span>
-                    <span class="brand__name">{{ $siteName }}</span>
+                <a
+                    href="{{ route('home') }}"
+                    class="brand brand--smj"
+                    aria-label="{{ $siteName }}"
+                >
+                    <img
+                        src="{{ asset('images/brand/sell-my-junk-logo.png') }}"
+                        alt="{{ $siteName }}"
+                        class="brand__logo"
+                    >
                 </a>
                 <p class="text-muted" style="max-width: 44ch">{{ $siteDescription }}</p>
             </div>
