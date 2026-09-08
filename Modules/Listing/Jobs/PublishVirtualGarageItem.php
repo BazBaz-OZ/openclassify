@@ -53,6 +53,29 @@ class PublishVirtualGarageItem implements ShouldQueue
             return;
         }
 
+        /*
+         * An unresolved duplicate must never be
+         * published automatically.
+         *
+         * "Keep anyway" removes the active duplicate
+         * marker before the item becomes publishable.
+         */
+        $duplicate =
+            data_get(
+                $item->ai_data,
+                'duplicate'
+            );
+
+        if (
+            is_array($duplicate)
+            && filled(
+                $duplicate['item_id']
+                ?? null
+            )
+        ) {
+            return;
+        }
+
         if (
             $item->status
                 === VirtualGarageItem::STATUS_PUBLISHED
@@ -235,44 +258,165 @@ class PublishVirtualGarageItem implements ShouldQueue
         }
 
         /*
-         * Attach the source photo only if the listing does
-         * not already have one.
+         * Attach exactly one final marketplace image.
          *
-         * This is important for retry safety.
+         * Image priority:
+         *
+         * 1. Seller's explicit manual crop.
+         * 2. AI-generated spotlight image.
+         * 3. Sanitised original garage photo.
+         *
+         * This keeps retries safe while ensuring a normal
+         * multi-item garage photo does not become the
+         * marketplace image for every detected item.
          */
         if (
             $listing
                 ->getMedia('listing-images')
                 ->isEmpty()
         ) {
-            $photo = $item->photo;
+            $sourceDisk = null;
+            $sourceRelativePath = null;
+            $sourceFileName = null;
 
-            if ($photo) {
+            $manualCropFile =
+                $item->ai_data[
+                    'manual_crop_file'
+                ] ?? null;
+
+            $spotlightFile =
+                $item->ai_data[
+                    'spotlight_file'
+                ] ?? null;
+
+            /*
+             * Seller crop always wins.
+             * AI spotlight is the normal fallback.
+             */
+            foreach (
+                [
+                    $manualCropFile,
+                    $spotlightFile,
+                ]
+                as $candidate
+            ) {
+                if (
+                    ! is_array($candidate)
+                    || ! filled(
+                        $candidate['disk']
+                        ?? null
+                    )
+                    || ! filled(
+                        $candidate['path']
+                        ?? null
+                    )
+                ) {
+                    continue;
+                }
+
+                $candidateDisk =
+                    (string)
+                    $candidate['disk'];
+
+                $candidatePath =
+                    (string)
+                    $candidate['path'];
+
+                if (
+                    ! Storage::disk(
+                        $candidateDisk
+                    )->exists(
+                        $candidatePath
+                    )
+                ) {
+                    continue;
+                }
+
+                $sourceDisk =
+                    $candidateDisk;
+
+                $sourceRelativePath =
+                    $candidatePath;
+
+                $sourceFileName =
+                    basename(
+                        $candidatePath
+                    );
+
+                break;
+            }
+
+            /*
+             * Last resort: the privacy-sanitised
+             * original garage photo.
+             */
+            if (
+                $sourceRelativePath === null
+            ) {
+                $photo = $item->photo;
+
+                if (
+                    $photo
+                    && filled($photo->disk)
+                    && filled($photo->path)
+                    && Storage::disk(
+                        (string)
+                        $photo->disk
+                    )->exists(
+                        (string)
+                        $photo->path
+                    )
+                ) {
+                    $sourceDisk =
+                        (string)
+                        $photo->disk;
+
+                    $sourceRelativePath =
+                        (string)
+                        $photo->path;
+
+                    $sourceFileName =
+                        $photo->original_name
+                        ?: basename(
+                            (string)
+                            $photo->path
+                        );
+                }
+            }
+
+            if (
+                $sourceDisk !== null
+                && $sourceRelativePath !== null
+                && $sourceFileName !== null
+            ) {
                 $sourcePath =
                     Storage::disk(
-                        $photo->disk
+                        $sourceDisk
                     )->path(
-                        $photo->path
+                        $sourceRelativePath
                     );
 
                 if (is_file($sourcePath)) {
-                    $mediaDisk = (string) config(
-                        'filesystems.default',
-                        'public'
-                    );
+                    $mediaDisk =
+                        (string)
+                        config(
+                            'filesystems.default',
+                            'public'
+                        );
 
-                    if ($mediaDisk === 'local') {
-                        $mediaDisk = 'public';
+                    if (
+                        $mediaDisk === 'local'
+                    ) {
+                        $mediaDisk =
+                            'public';
                     }
 
-                    $listing->attachListingImage(
-                        $sourcePath,
-                        $photo->original_name
-                            ?: basename(
-                                $photo->path
-                            ),
-                        $mediaDisk
-                    );
+                    $listing
+                        ->attachListingImage(
+                            $sourcePath,
+                            $sourceFileName,
+                            $mediaDisk
+                        );
                 }
             }
         }

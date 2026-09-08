@@ -34,6 +34,7 @@ class UserResource extends Resource
             UserFormFields::email(),
             UserFormFields::password(fn ($livewire) => $livewire instanceof Pages\CreateUser),
             UserFormFields::status(),
+            UserFormFields::membershipOverride(),
             UserFormFields::roles(),
         ]);
     }
@@ -45,6 +46,14 @@ class UserResource extends Resource
             TextColumn::make('name')->searchable()->sortable(),
             TextColumn::make('email')->searchable()->sortable(),
             TextColumn::make('roles.name')->badge()->label('Roles'),
+            TextColumn::make('membership_override')
+                ->label('Membership')
+                ->badge()
+                ->formatStateUsing(fn (?string $state): string => match ($state) {
+                    'member' => 'SMJ Member',
+                    'pro' => 'SMJ Pro',
+                    default => 'Stripe / Free',
+                }),
             StateFusionSelectColumn::make('status'),
             TextColumn::make('created_at')->dateTime()->sortable(),
         ])->defaultSort('id', 'desc')->filters([

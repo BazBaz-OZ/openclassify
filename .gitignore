@@ -29,3 +29,9 @@ Thumbs.db
 /public/vendor/
 package-lock.json
 *.backup-*
+
+# Local troubleshooting backups / Python cache
+*.bak*
+__pycache__/
+*.pyc
+*.pyo

@@ -1,4 +1,18 @@
 services:
+  vision:
+    build:
+      context: ./vision
+      dockerfile: Dockerfile
+    environment:
+      VISION_DATA_ROOT: /data
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+    volumes:
+      - storage_data:/data
+    expose:
+      - "8001"
+    restart: unless-stopped
+
   app:
     build:
       context: .
@@ -100,6 +114,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+
 
   db:
     image: postgres:16-alpine

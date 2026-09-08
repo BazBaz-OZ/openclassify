@@ -34,6 +34,18 @@ class UserFormFields
         return StateFusionSelect::make('status')->required();
     }
 
+    public static function membershipOverride(): Select
+    {
+        return Select::make('membership_override')
+            ->label('Membership override')
+            ->options([
+                'member' => 'SMJ Member',
+                'pro' => 'SMJ Pro',
+            ])
+            ->placeholder('None — use Stripe subscription')
+            ->nullable();
+    }
+
     public static function roles(): Select
     {
         return Select::make('roles')->multiple()->relationship('roles', 'name')->preload();

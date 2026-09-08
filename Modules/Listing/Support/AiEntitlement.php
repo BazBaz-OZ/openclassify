@@ -11,6 +11,12 @@ class AiEntitlement
 {
     public function plan(User $user): string
     {
+        $override = $user->getAttribute('membership_override');
+
+        if (in_array($override, ['member', 'pro'], true)) {
+            return $override;
+        }
+
         $proPrice = config(
             'membership.plans.pro.stripe_price_id'
         );

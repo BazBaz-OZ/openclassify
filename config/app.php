@@ -12,7 +12,7 @@ return [
 
     'available_locales' => ['en', 'tr', 'ar', 'zh', 'es', 'fr', 'de', 'pt', 'ru', 'ja'],
 
-    'currencies' => ['USD'],
+    'currencies' => ['AUD', 'USD'],
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 

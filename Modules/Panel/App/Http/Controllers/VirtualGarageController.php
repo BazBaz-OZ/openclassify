@@ -381,7 +381,65 @@ class VirtualGarageController extends Controller
             )
             ->get();
 
-        foreach ($draftItems as $item) {
+        $hasUnresolvedDuplicate =
+            static function (
+                VirtualGarageItem $item
+            ): bool {
+                $duplicate =
+                    data_get(
+                        $item->ai_data,
+                        'duplicate'
+                    );
+
+                return
+                    is_array($duplicate)
+                    && filled(
+                        $duplicate['item_id']
+                        ?? null
+                    );
+            };
+
+        $duplicateItems =
+            $draftItems
+                ->filter(
+                    $hasUnresolvedDuplicate
+                )
+                ->values();
+
+        /*
+         * Initial publication is deliberately strict.
+         *
+         * A brand-new garage must have all duplicate
+         * decisions resolved before it goes live.
+         */
+        if (
+            $virtualGarage->status
+                === VirtualGarage::STATUS_DRAFT
+            && $duplicateItems->isNotEmpty()
+        ) {
+            return back()->withErrors([
+                'virtual_garage' =>
+                    'Resolve every possible duplicate before publishing. '
+                    .'Choose Keep anyway or Skip duplicate for each flagged item.',
+            ]);
+        }
+
+        /*
+         * An already-live garage may publish newly
+         * reviewed items without being blocked by other
+         * items that still need duplicate review.
+         */
+        $publishItems =
+            $virtualGarage->status
+                === VirtualGarage::STATUS_ACTIVE
+                ? $draftItems
+                    ->reject(
+                        $hasUnresolvedDuplicate
+                    )
+                    ->values()
+                : $draftItems;
+
+        foreach ($publishItems as $item) {
             if (blank($item->title)) {
                 return back()->withErrors([
                     'virtual_garage' =>
@@ -407,12 +465,22 @@ class VirtualGarageController extends Controller
         /*
          * Publishing is deliberately asynchronous.
          *
-         * Each draft item gets its own Redis queue job so
-         * image conversion cannot block the browser request.
+         * Each reviewed draft item gets its own Redis
+         * queue job so image conversion cannot block
+         * the browser request.
          */
-        $queuedCount = $draftItems->count();
+        $queuedCount =
+            $publishItems->count();
 
         if ($queuedCount === 0) {
+            if ($duplicateItems->isNotEmpty()) {
+                return back()->withErrors([
+                    'virtual_garage' =>
+                        'There are no reviewed items ready to publish. '
+                        .'Resolve the remaining possible duplicates first.',
+                ]);
+            }
+
             if (! $virtualGarage->listings()->exists()) {
                 return back()
                     ->withInput()
@@ -422,32 +490,52 @@ class VirtualGarageController extends Controller
                     ]);
             }
 
-            $virtualGarage->update([
-                'status' =>
-                    VirtualGarage::STATUS_ACTIVE,
+            if (
+                $virtualGarage->status
+                    === VirtualGarage::STATUS_DRAFT
+            ) {
+                $virtualGarage->update([
+                    'status' =>
+                        VirtualGarage::STATUS_ACTIVE,
 
-                'starts_at' =>
-                    $virtualGarage->starts_at
-                        ?? now(),
-            ]);
+                    'starts_at' =>
+                        $virtualGarage->starts_at
+                            ?? now(),
+                ]);
+
+                return back()->with(
+                    'success',
+                    'Virtual Garage is now live.'
+                );
+            }
 
             return back()->with(
                 'success',
-                'Virtual Garage is now live.'
+                'There are no new reviewed items to publish.'
             );
         }
 
-        foreach ($draftItems as $draftItem) {
+        foreach ($publishItems as $draftItem) {
             PublishVirtualGarageItem::dispatch(
                 (int) $draftItem->getKey()
             );
         }
 
+        $message =
+            $queuedCount
+            .' item(s) are being published in the background. '
+            .'You can leave this page while Sell My Junk finishes the job.';
+
+        if ($duplicateItems->isNotEmpty()) {
+            $message .=
+                ' '
+                .$duplicateItems->count()
+                .' possible duplicate(s) were left as drafts for review.';
+        }
+
         return back()->with(
             'success',
-            $queuedCount
-                .' item(s) are being published in the background. '
-                .'You can leave this page while Sell My Junk finishes the job.'
+            $message
         );
     }
 
@@ -468,7 +556,7 @@ class VirtualGarageController extends Controller
                 'required',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:10240',
+                'max:'.config('quick-listing.max_photo_size_kb', 20480),
             ],
         ]);
 
@@ -512,6 +600,17 @@ class VirtualGarageController extends Controller
         ) + 1;
 
         foreach ($validated['photos'] as $index => $photo) {
+            /*
+             * Privacy protection:
+             *
+             * Re-encode the uploaded image before it is permanently
+             * stored or sent to AI. This removes GPS/EXIF/XMP/IPTC
+             * metadata that could disclose where the photo was taken.
+             */
+            app(
+                \Modules\Listing\Support\UploadedImageSanitizer::class
+            )->sanitize($photo);
+
             $extension = strtolower(
                 $photo->getClientOriginalExtension()
                 ?: $photo->guessExtension()
@@ -539,7 +638,9 @@ class VirtualGarageController extends Controller
                     'mime_type' =>
                         $photo->getMimeType(),
                     'size' =>
-                        $photo->getSize(),
+                        \Illuminate\Support\Facades\Storage::disk(
+                            $disk
+                        )->size($path),
                     'status' =>
                         VirtualGaragePhoto::STATUS_PENDING,
                     'sort_order' =>
@@ -578,10 +679,38 @@ class VirtualGarageController extends Controller
                             ),
                     ]
                 );
+                $duplicateDetector = app(
+                    \Modules\Listing\Support\VirtualGarageDuplicateDetector::class
+                );
+
                 foreach (
                     $analysis['items'] ?? []
                     as $itemIndex => $item
                 ) {
+                    $duplicateMatch =
+                        $duplicateDetector->findStrongMatch(
+                            (int) $virtualGarage->getKey(),
+                            (int) $garagePhoto->getKey(),
+                            (string) $item['title']
+                        );
+
+                    $itemAiData = [
+                        'source' =>
+                            'virtual_garage_ai',
+                    ];
+
+                    if ($duplicateMatch) {
+                        $itemAiData['duplicate'] = [
+                            'match' => 'strong',
+
+                            'item_id' =>
+                                (int) $duplicateMatch->getKey(),
+
+                            'title' =>
+                                $duplicateMatch->title,
+                        ];
+                    }
+
                     VirtualGarageItem::query()->create([
                         'virtual_garage_id' =>
                             $virtualGarage->getKey(),
@@ -614,10 +743,11 @@ class VirtualGarageController extends Controller
                         'confidence' =>
                             $item['confidence'] ?? null,
 
-                        'ai_data' => [
-                            'source' =>
-                                'virtual_garage_ai',
-                        ],
+                        'bounding_box' =>
+                            $item['bounding_box'] ?? null,
+
+                        'ai_data' =>
+                            $itemAiData,
 
                         'status' =>
                             VirtualGarageItem::STATUS_DRAFT,
@@ -626,6 +756,17 @@ class VirtualGarageController extends Controller
                             $itemIndex,
                     ]);
                 }
+
+                /*
+                 * QUEUE_INITIAL_UPLOAD_SPOTLIGHTS
+                 *
+                 * AI detection is complete. Generate the
+                 * presentation images in the queue so the
+                 * browser request can return immediately.
+                 */
+                \Modules\Listing\Jobs\GenerateVirtualGaragePhotoSpotlights::dispatch(
+                    (int) $garagePhoto->getKey()
+                );
 
                 $garagePhoto->update([
                     'status' =>
@@ -766,10 +907,38 @@ class VirtualGarageController extends Controller
             ->whereNull('listing_id')
             ->delete();
 
+        $duplicateDetector = app(
+            \Modules\Listing\Support\VirtualGarageDuplicateDetector::class
+        );
+
         foreach (
             $analysis['items'] ?? []
             as $itemIndex => $item
         ) {
+            $duplicateMatch =
+                $duplicateDetector->findStrongMatch(
+                    (int) $virtualGarage->getKey(),
+                    (int) $photo->getKey(),
+                    (string) $item['title']
+                );
+
+            $itemAiData = [
+                'source' =>
+                    'virtual_garage_ai',
+            ];
+
+            if ($duplicateMatch) {
+                $itemAiData['duplicate'] = [
+                    'match' => 'strong',
+
+                    'item_id' =>
+                        (int) $duplicateMatch->getKey(),
+
+                    'title' =>
+                        $duplicateMatch->title,
+                ];
+            }
+
             VirtualGarageItem::query()->create([
                 'virtual_garage_id' =>
                     $virtualGarage->getKey(),
@@ -802,10 +971,11 @@ class VirtualGarageController extends Controller
                 'confidence' =>
                     $item['confidence'] ?? null,
 
-                'ai_data' => [
-                    'source' =>
-                        'virtual_garage_ai',
-                ],
+                'bounding_box' =>
+                    $item['bounding_box'] ?? null,
+
+                'ai_data' =>
+                    $itemAiData,
 
                 'status' =>
                     VirtualGarageItem::STATUS_DRAFT,
@@ -814,6 +984,17 @@ class VirtualGarageController extends Controller
                     $itemIndex,
             ]);
         }
+
+        /*
+         * QUEUE_RETRY_UPLOAD_SPOTLIGHTS
+         *
+         * AI detection is complete. Generate the
+         * presentation images in the queue so the
+         * browser request can return immediately.
+         */
+        \Modules\Listing\Jobs\GenerateVirtualGaragePhotoSpotlights::dispatch(
+            (int) $photo->getKey()
+        );
 
         $photo->update([
             'status' =>
@@ -924,6 +1105,293 @@ class VirtualGarageController extends Controller
         return back()->with(
             'success',
             'Garage item updated.'
+        );
+    }
+
+    public function updateItemPhoto(
+        Request $request,
+        VirtualGarage $virtualGarage,
+        VirtualGarageItem $item
+    ): RedirectResponse {
+        $virtualGarage->assertOwnedBy(
+            $request->user()
+        );
+
+        abort_unless(
+            (int) $item->virtual_garage_id
+                === (int) $virtualGarage->getKey(),
+            404
+        );
+
+        /*
+         * Validate the action FIRST.
+         *
+         * "Use original" must not care about crop
+         * coordinates at all.
+         */
+        $action = $request->validate([
+            'photo_action' => [
+                'required',
+                'string',
+                'in:save_crop,use_original',
+            ],
+        ])['photo_action'];
+
+        $cropper = app(
+            \Modules\Listing\Support\VirtualGarageItemManualCropper::class
+        );
+
+        if ($action === 'use_original') {
+            $cropper->clear($item);
+
+            /*
+             * If already published, restore the
+             * sanitised original there as well.
+             */
+            if (
+                $item->listing_id !== null
+                && $item->photo
+            ) {
+                $listing =
+                    \Modules\Listing\Models\Listing::query()
+                        ->find(
+                            $item->listing_id
+                        );
+
+                if ($listing) {
+                    $sourcePath =
+                        \Illuminate\Support\Facades\Storage::disk(
+                            $item->photo->disk
+                        )->path(
+                            $item->photo->path
+                        );
+
+                    if (is_file($sourcePath)) {
+                        $listing->replacePublicImage(
+                            $sourcePath,
+                            'garage-source-'
+                                .$item->getKey()
+                                .'-'
+                                .basename(
+                                    $item->photo->path
+                                )
+                        );
+                    }
+                }
+            }
+
+            return back()->with(
+                'success',
+                'Original garage photo restored.'
+            );
+        }
+
+        /*
+         * Only crop saves need crop coordinates.
+         */
+        $validated = $request->validate([
+            'crop_center_x' => [
+                'required',
+                'numeric',
+                'between:0,1',
+            ],
+
+            'crop_center_y' => [
+                'required',
+                'numeric',
+                'between:0,1',
+            ],
+
+            'crop_zoom' => [
+                'required',
+                'numeric',
+                'min:1',
+                'max:4',
+            ],
+
+            'crop_rotation' => [
+                'required',
+                'numeric',
+                'min:-180',
+                'max:180',
+            ],
+        ]);
+
+        $aiData =
+            is_array($item->ai_data)
+                ? $item->ai_data
+                : [];
+
+        $aiData['manual_crop'] = [
+            'center_x' =>
+                (float)
+                $validated['crop_center_x'],
+
+            'center_y' =>
+                (float)
+                $validated['crop_center_y'],
+
+            'zoom' =>
+                (float)
+                $validated['crop_zoom'],
+
+            'rotation' =>
+                (float)
+                $validated['crop_rotation'],
+
+            'aspect_ratio' => '4:3',
+        ];
+
+        $item->forceFill([
+            'ai_data' => $aiData,
+        ])->save();
+
+        /*
+         * The browser has already rendered the seller's
+         * pan / zoom / rotation into a small 4:3 image.
+         *
+         * Store that derivative instead of asking GD to
+         * rotate the full-resolution phone photo.
+         */
+        $dataUrl =
+            $request->input(
+                'cropped_image'
+            );
+
+        if (
+            ! is_string($dataUrl)
+            || ! str_starts_with(
+                $dataUrl,
+                'data:image/'
+            )
+        ) {
+            return back()->withErrors([
+                'photo' =>
+                    'The adjusted image was not received. Please try again.',
+            ]);
+        }
+
+        if (
+            strlen($dataUrl)
+            > 12 * 1024 * 1024
+        ) {
+            return back()->withErrors([
+                'photo' =>
+                    'The adjusted image is too large.',
+            ]);
+        }
+
+        $result =
+            $cropper->storeRenderedCrop(
+                $item,
+                $dataUrl
+            );
+
+        if (! $result) {
+            return back()->withErrors([
+                'photo' =>
+                    'The adjusted photo could not be created.',
+            ]);
+        }
+
+        if (
+            $item->listing_id !== null
+        ) {
+            $listing =
+                \Modules\Listing\Models\Listing::query()
+                    ->find(
+                        $item->listing_id
+                    );
+
+            if ($listing) {
+                $cropPath =
+                    \Illuminate\Support\Facades\Storage::disk(
+                        (string)
+                        $result['disk']
+                    )->path(
+                        (string)
+                        $result['path']
+                    );
+
+                if (is_file($cropPath)) {
+                    $listing->replacePublicImage(
+                        $cropPath,
+                        basename(
+                            (string)
+                            $result['path']
+                        )
+                    );
+                }
+            }
+        }
+
+        return back()->with(
+            'success',
+            'Adjusted item photo saved.'
+        );
+    }
+
+    public function keepDuplicate(
+        Request $request,
+        VirtualGarage $virtualGarage,
+        VirtualGarageItem $item
+    ): RedirectResponse {
+        $virtualGarage->assertOwnedBy(
+            $request->user()
+        );
+
+        abort_unless(
+            (int) $item->virtual_garage_id
+                === (int) $virtualGarage->getKey(),
+            404
+        );
+
+        abort_if(
+            $item->listing_id !== null,
+            409,
+            'Published items cannot be changed here.'
+        );
+
+        $aiData =
+            is_array($item->ai_data)
+                ? $item->ai_data
+                : [];
+
+        $duplicate =
+            $aiData['duplicate']
+            ?? null;
+
+        /*
+         * Preserve the seller's decision for
+         * diagnostics/auditing, but remove the
+         * active warning.
+         */
+        if (is_array($duplicate)) {
+            $aiData['duplicate_kept'] = [
+                'item_id' =>
+                    $duplicate['item_id']
+                    ?? null,
+
+                'title' =>
+                    $duplicate['title']
+                    ?? null,
+
+                'kept_at' =>
+                    now()->toIso8601String(),
+            ];
+        }
+
+        unset(
+            $aiData['duplicate']
+        );
+
+        $item->forceFill([
+            'ai_data' => $aiData,
+        ])->save();
+
+        return back()->with(
+            'success',
+            'Item kept. Duplicate warning dismissed.'
         );
     }
 
