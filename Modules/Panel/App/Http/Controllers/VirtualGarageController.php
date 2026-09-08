@@ -214,6 +214,7 @@ class VirtualGarageController extends Controller
                     VirtualGarageItem::STATUS_SKIPPED
                 ),
             'items.category',
+            'items.historicalListing',
         ]);
 
         $categories =

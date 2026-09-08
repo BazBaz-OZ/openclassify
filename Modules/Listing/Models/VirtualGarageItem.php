@@ -66,6 +66,16 @@ class VirtualGarageItem extends Model
         return $this->belongsTo(Listing::class);
     }
 
+    public function historicalListing()
+    {
+        return $this
+            ->belongsTo(
+                Listing::class,
+                'listing_id'
+            )
+            ->withTrashed();
+    }
+
     public function hasManualCrop(): bool
     {
         $crop = $this->ai_data['manual_crop_file'] ?? null;

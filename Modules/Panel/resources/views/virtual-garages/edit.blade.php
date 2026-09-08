@@ -541,10 +541,44 @@
 
                         <div class="card__body stack stack--tight">
 
+                            @php
+                                $historicalListing =
+                                    $item->historicalListing;
+
+                                $listingRemoved =
+                                    $item->listing_id !== null
+                                    && $historicalListing !== null
+                                    && $historicalListing->trashed();
+
+                                $listingUnavailable =
+                                    $item->listing_id !== null
+                                    && $historicalListing === null;
+
+                                $itemStatusLabel =
+                                    match ($item->status) {
+                                        \Modules\Listing\Models\VirtualGarageItem::STATUS_PUBLISHED =>
+                                            $listingRemoved
+                                                ? 'LISTING REMOVED'
+                                                : (
+                                                    $listingUnavailable
+                                                        ? 'LISTING UNAVAILABLE'
+                                                        : 'PUBLISHED'
+                                                ),
+
+                                        \Modules\Listing\Models\VirtualGarageItem::STATUS_DRAFT =>
+                                            'AI DRAFT',
+
+                                        default =>
+                                            strtoupper(
+                                                (string) $item->status
+                                            ),
+                                    };
+                            @endphp
+
                             <div class="row row--between row--wrap">
                                 <div class="row row--wrap">
                                     <span class="badge">
-                                        AI DRAFT
+                                        {{ $itemStatusLabel }}
                                     </span>
 
                                     @if(app()->environment('local'))
@@ -566,6 +600,48 @@
                             <h3 class="card__title">
                                 {{ $item->title }}
                             </h3>
+
+                            @if(
+                                $item->status ===
+                                    \Modules\Listing\Models\VirtualGarageItem::STATUS_PUBLISHED
+                                && $item->listing_id !== null
+                            )
+                                @if(
+                                    $historicalListing !== null
+                                    && !$historicalListing->trashed()
+                                )
+                                    <p>
+                                        <strong>Listing:</strong>
+
+                                        <a
+                                            href="{{ route(
+                                                'listings.show',
+                                                $historicalListing
+                                            ) }}"
+                                        >
+                                            View listing
+                                        </a>
+
+                                        <span class="text-muted">
+                                            ({{ ucfirst(
+                                                $historicalListing->statusValue()
+                                            ) }})
+                                        </span>
+                                    </p>
+
+                                @elseif($listingRemoved)
+                                    <p class="text-muted">
+                                        <strong>Listing:</strong>
+                                        Removed by seller
+                                    </p>
+
+                                @elseif($listingUnavailable)
+                                    <p class="text-muted">
+                                        <strong>Listing:</strong>
+                                        Unavailable
+                                    </p>
+                                @endif
+                            @endif
 
                             @if($item->category)
                                 <p>
