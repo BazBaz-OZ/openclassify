@@ -92,7 +92,11 @@
                             </form>
                         @endif
 
-                        <form method="POST" action="{{ route('panel.listings.destroy', $listing) }}" data-confirm="{{ __('panel::messages.confirm_delete') }}">
+                        <form
+                            method="POST"
+                            action="{{ route('panel.listings.destroy', $listing) }}"
+                            onsubmit="return confirm(@js(__('panel::messages.confirm_delete')));"
+                        >
                             @csrf
                             <button type="submit" class="button button--critical button--small">{{ __('panel::messages.delete') }}</button>
                         </form>
