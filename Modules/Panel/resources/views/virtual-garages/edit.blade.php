@@ -983,6 +983,31 @@
 
                 <div class="row row--wrap">
 
+                    @php
+                        $unresolvedDuplicateCount =
+                            $garage->items
+                                ->filter(
+                                    function ($garageItem) {
+                                        $duplicate =
+                                            data_get(
+                                                $garageItem->ai_data,
+                                                'duplicate'
+                                            );
+
+                                        return
+                                            $garageItem->status ===
+                                                \Modules\Listing\Models\VirtualGarageItem::STATUS_DRAFT
+                                            && $garageItem->listing_id === null
+                                            && is_array($duplicate)
+                                            && filled(
+                                                $duplicate['item_id']
+                                                ?? null
+                                            );
+                                    }
+                                )
+                                ->count();
+                    @endphp
+
                     <button
                         type="submit"
                         name="action"
@@ -1022,6 +1047,36 @@
             </div>
 
         </form>
+
+        @if($unresolvedDuplicateCount > 0)
+            <div
+                class="row row--wrap"
+                style="margin-top:var(--space-3);"
+            >
+                <form
+                    method="POST"
+                    action="{{ route(
+                        'panel.virtual-garages.duplicates.skip',
+                        $garage
+                    ) }}"
+                    onsubmit="return confirm(
+                        'Skip all '
+                        + {{ $unresolvedDuplicateCount }}
+                        + ' possible duplicates?'
+                    );"
+                >
+                    @csrf
+
+                    <button
+                        type="submit"
+                        class="button button--secondary"
+                    >
+                        Skip all duplicates
+                        ({{ $unresolvedDuplicateCount }})
+                    </button>
+                </form>
+            </div>
+        @endif
     </div>
 </section>
 

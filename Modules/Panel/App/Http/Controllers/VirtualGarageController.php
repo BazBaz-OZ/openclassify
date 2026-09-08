@@ -1395,6 +1395,72 @@ class VirtualGarageController extends Controller
         );
     }
 
+    public function skipDuplicates(
+        Request $request,
+        VirtualGarage $virtualGarage
+    ): RedirectResponse {
+        $virtualGarage->assertOwnedBy(
+            $request->user()
+        );
+
+        /*
+         * Only unresolved duplicate drafts are affected.
+         *
+         * Published, previously kept, clean and already
+         * skipped items are deliberately left untouched.
+         */
+        $items = $virtualGarage
+            ->items()
+            ->where(
+                'status',
+                VirtualGarageItem::STATUS_DRAFT
+            )
+            ->whereNull('listing_id')
+            ->get()
+            ->filter(
+                static function (
+                    VirtualGarageItem $item
+                ): bool {
+                    $duplicate =
+                        data_get(
+                            $item->ai_data,
+                            'duplicate'
+                        );
+
+                    return
+                        is_array($duplicate)
+                        && filled(
+                            $duplicate['item_id']
+                            ?? null
+                        );
+                }
+            );
+
+        $skippedCount = 0;
+
+        foreach ($items as $item) {
+            $item->update([
+                'status' =>
+                    VirtualGarageItem::STATUS_SKIPPED,
+            ]);
+
+            $skippedCount++;
+        }
+
+        if ($skippedCount === 0) {
+            return back()->with(
+                'success',
+                'There are no unresolved duplicates to skip.'
+            );
+        }
+
+        return back()->with(
+            'success',
+            $skippedCount
+                .' duplicate item(s) skipped.'
+        );
+    }
+
     public function skipItem(
         Request $request,
         VirtualGarage $virtualGarage,

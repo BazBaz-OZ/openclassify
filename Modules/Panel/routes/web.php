@@ -93,6 +93,9 @@ Route::middleware(['web', 'auth'])->prefix('panel')->name('panel.')->group(funct
     Route::post('/virtual-garages/{virtualGarage}/items/{item}/duplicate/keep', [VirtualGarageController::class, 'keepDuplicate'])
         ->name('virtual-garages.items.duplicate.keep');
 
+    Route::post('/virtual-garages/{virtualGarage}/duplicates/skip', [VirtualGarageController::class, 'skipDuplicates'])
+        ->name('virtual-garages.duplicates.skip');
+
     Route::delete('/virtual-garages/{virtualGarage}/photos/{photo}', [VirtualGarageController::class, 'deletePhoto'])
         ->name('virtual-garages.photos.destroy');
 
