@@ -774,10 +774,48 @@ class Listing extends Model implements HasMedia
             $alreadySold = max(0, $oldTotal - $oldAvailable);
 
             $newTotal = max(1, (int) $attributes['quantity_total']);
-            $newAvailable = max(0, $newTotal - $alreadySold);
 
-            $payload['quantity_total'] = $newTotal;
-            $payload['quantity_available'] = $newAvailable;
+            $requestedStatus =
+                isset($attributes['status'])
+                    ? (string) $attributes['status']
+                    : null;
+
+            $wasSold =
+                $this->statusValue() === 'sold';
+
+            /*
+             * Keep stock and status consistent.
+             *
+             * Explicitly marking a listing sold consumes
+             * all remaining stock.
+             *
+             * Changing a sold listing back to another
+             * status is treated as undoing/restocking
+             * the sold listing.
+             */
+            if ($requestedStatus === 'sold') {
+                $newAvailable = 0;
+            } elseif (
+                $wasSold
+                && in_array(
+                    $requestedStatus,
+                    ['pending', 'active', 'expired'],
+                    true
+                )
+            ) {
+                $newAvailable = $newTotal;
+            } else {
+                $newAvailable = max(
+                    0,
+                    $newTotal - $alreadySold
+                );
+            }
+
+            $payload['quantity_total'] =
+                $newTotal;
+
+            $payload['quantity_available'] =
+                $newAvailable;
 
             if ($newAvailable === 0) {
                 $payload['status'] = 'sold';
