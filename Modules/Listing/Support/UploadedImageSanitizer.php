@@ -9,6 +9,9 @@ use RuntimeException;
 
 class UploadedImageSanitizer
 {
+    private const MAX_SOURCE_PIXELS = 30000000;
+    private const MAX_LONG_EDGE = 4096;
+
     public function sanitize(UploadedFile $file): void
     {
         $path = $file->getRealPath();
@@ -59,6 +62,31 @@ class UploadedImageSanitizer
             );
         }
 
+        $dimensions = @getimagesize($path);
+
+        if (
+            ! is_array($dimensions)
+            || ! isset($dimensions[0], $dimensions[1])
+        ) {
+            throw new RuntimeException(
+                'Uploaded image dimensions could not be read.'
+            );
+        }
+
+        $sourceWidth = (int) $dimensions[0];
+        $sourceHeight = (int) $dimensions[1];
+        $sourcePixels = $sourceWidth * $sourceHeight;
+
+        if (
+            $sourceWidth < 1
+            || $sourceHeight < 1
+            || $sourcePixels > self::MAX_SOURCE_PIXELS
+        ) {
+            throw new RuntimeException(
+                'Uploaded image dimensions are too large.'
+            );
+        }
+
         $contents = @file_get_contents($path);
 
         if ($contents === false) {
@@ -76,6 +104,18 @@ class UploadedImageSanitizer
         }
 
         try {
+            /*
+             * Scale large phone photos before EXIF rotation.
+             *
+             * GD rotation allocates a second image buffer. Reducing the
+             * image first prevents high-resolution photos from exhausting
+             * PHP memory while retaining ample marketplace resolution.
+             */
+            $image = $this->scaleDown(
+                $image,
+                self::MAX_LONG_EDGE
+            );
+
             $image = $this->applyOrientation(
                 $image,
                 $orientation
@@ -132,6 +172,48 @@ class UploadedImageSanitizer
                 imagedestroy($image);
             }
         }
+    }
+
+    private function scaleDown(
+        \GdImage $image,
+        int $maxLongEdge
+    ): \GdImage {
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $longEdge = max($width, $height);
+
+        if ($longEdge <= $maxLongEdge) {
+            return $image;
+        }
+
+        $scale = $maxLongEdge / $longEdge;
+
+        $targetWidth = max(
+            1,
+            (int) round($width * $scale)
+        );
+
+        $targetHeight = max(
+            1,
+            (int) round($height * $scale)
+        );
+
+        $scaled = imagescale(
+            $image,
+            $targetWidth,
+            $targetHeight,
+            IMG_BILINEAR_FIXED
+        );
+
+        if ($scaled === false) {
+            throw new RuntimeException(
+                'Unable to safely resize uploaded image.'
+            );
+        }
+
+        imagedestroy($image);
+
+        return $scaled;
     }
 
     private function applyOrientation(

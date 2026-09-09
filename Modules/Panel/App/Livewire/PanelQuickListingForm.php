@@ -22,6 +22,7 @@ use Modules\Listing\Models\VirtualGaragePhoto;
 use Modules\Listing\Support\ListingCustomFieldSchemaBuilder;
 use Modules\Listing\Support\ListingPanelHelper;
 use Modules\Listing\Support\QuickListingCategorySuggester;
+use Modules\Listing\Support\UploadedImageSanitizer;
 use Modules\Listing\Support\AiEntitlement;
 use Modules\Location\Models\City;
 use Modules\Location\Models\Country;
@@ -260,6 +261,7 @@ class PanelQuickListingForm extends Component
     public function detectCategoryFromImage(): void
     {
         $image = null;
+        $sanitizeAiCopy = false;
 
         if (
             isset($this->photos[0])
@@ -284,6 +286,8 @@ class PanelQuickListingForm extends Component
                     null,
                     true
                 );
+
+                $sanitizeAiCopy = true;
             }
         } elseif ($this->garagePhotoId) {
             $garagePhoto = VirtualGaragePhoto::query()
@@ -347,7 +351,54 @@ class PanelQuickListingForm extends Component
         $this->detectedReason = null;
         $this->detectedAlternatives = [];
 
+        $sanitizedAiPath = null;
+
         try {
+            if ($sanitizeAiCopy) {
+                $sourcePath = $image->getRealPath();
+
+                if (
+                    ! is_string($sourcePath)
+                    || $sourcePath === ''
+                    || ! is_file($sourcePath)
+                ) {
+                    throw new \RuntimeException(
+                        'Quick Listing image could not be accessed.'
+                    );
+                }
+
+                $sanitizedAiPath = tempnam(
+                    sys_get_temp_dir(),
+                    'smj-ai-'
+                );
+
+                if (
+                    ! is_string($sanitizedAiPath)
+                    || ! copy(
+                        $sourcePath,
+                        $sanitizedAiPath
+                    )
+                ) {
+                    throw new \RuntimeException(
+                        'Unable to prepare privacy-safe AI image.'
+                    );
+                }
+
+                $sanitizedImage = new UploadedFile(
+                    $sanitizedAiPath,
+                    $image->getClientOriginalName(),
+                    $image->getMimeType(),
+                    null,
+                    true
+                );
+
+                app(
+                    UploadedImageSanitizer::class
+                )->sanitize($sanitizedImage);
+
+                $image = $sanitizedImage;
+            }
+
             $result = app(
                 QuickListingCategorySuggester::class
             )->suggestFromImage($image);
@@ -407,6 +458,13 @@ class PanelQuickListingForm extends Component
                 );
             }
         } finally {
+            if (
+                is_string($sanitizedAiPath)
+                && is_file($sanitizedAiPath)
+            ) {
+                @unlink($sanitizedAiPath);
+            }
+
             $this->isDetecting = false;
         }
     }
@@ -997,6 +1055,10 @@ class PanelQuickListingForm extends Component
             if (! $photo instanceof TemporaryUploadedFile) {
                 continue;
             }
+
+            app(
+                UploadedImageSanitizer::class
+            )->sanitize($photo);
 
             $listing->attachListingImage(
                 $photo->getRealPath(),
