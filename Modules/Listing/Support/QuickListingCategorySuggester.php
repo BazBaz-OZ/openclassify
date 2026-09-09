@@ -44,7 +44,39 @@ class QuickListingCategorySuggester
             ];
         }
 
-        $catalog = $this->buildCatalog($categories);
+        /*
+         * Keep parent categories available while building
+         * breadcrumb paths, but never allow AI to classify
+         * directly into a category that has active children.
+         *
+         * Example:
+         * Sports & Fitness > Water Sports
+         *
+         * The AI may choose Water Sports, but not the
+         * Sports & Fitness parent itself.
+         */
+        $parentIds = $categories
+            ->pluck('parent_id')
+            ->filter(
+                fn ($id): bool =>
+                    $id !== null
+            )
+            ->map(
+                fn ($id): int =>
+                    (int) $id
+            )
+            ->unique()
+            ->values();
+
+        $catalog = $this
+            ->buildCatalog($categories)
+            ->reject(
+                fn (array $category): bool =>
+                    $parentIds->contains(
+                        (int) $category['id']
+                    )
+            )
+            ->values();
         $categoryIds = $catalog->pluck('id')->values()->all();
         $catalogText = $catalog
             ->map(fn (array $category): string => "{$category['id']}: {$category['path']}")
