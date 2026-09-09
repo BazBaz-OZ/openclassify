@@ -861,6 +861,24 @@ class Listing extends Model implements HasMedia
 
         $payload['currency'] = ListingPanelHelper::normalizeCurrency($data['currency'] ?? null);
 
+        /*
+         * Frontend listings are live for 30 days by default.
+         *
+         * Honour an explicitly supplied expiry, but ensure
+         * normal seller listings and Virtual Garage listings
+         * never become permanently active simply because the
+         * caller omitted expires_at.
+         */
+        if (
+            ! array_key_exists('expires_at', $payload)
+            || blank($payload['expires_at'])
+        ) {
+            $payload['expires_at'] =
+                now()->addDays(
+                    self::DEFAULT_PANEL_EXPIRY_WINDOW_DAYS
+                );
+        }
+
         $listing = static::query()->make($payload);
 
         // These values are generated internally and intentionally are not
