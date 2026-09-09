@@ -93,7 +93,7 @@
         <form
             method="POST"
             action="{{ route('panel.wanted.cancel', $wanted) }}"
-            data-confirm="Cancel this Wanted post?"
+            onsubmit="return confirm('Cancel this Wanted post?');"
         >
             @csrf
 

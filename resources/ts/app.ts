@@ -1,7 +1,7 @@
 import '../css/app.css';
 
 import { startBehaviors, type Behavior } from './core/behavior';
-import { characterCounter, confirmAction, dependentSelect, imagePreview, ratingInput, revealPanel } from './modules/forms';
+import { characterCounter, dependentSelect, imagePreview, ratingInput, revealPanel } from './modules/forms';
 import { favoriteToggle } from './modules/favorite-toggle';
 import { filterDrawer, listingFilters, viewModeToggle } from './modules/listing-filters';
 import { inboxBadge, inboxPane, inboxThread } from './modules/inbox';
@@ -29,7 +29,6 @@ const behaviors: readonly Behavior<never>[] = [
     characterCounter,
     dependentSelect,
     imagePreview,
-    confirmAction,
     ratingInput,
     revealPanel,
 ];

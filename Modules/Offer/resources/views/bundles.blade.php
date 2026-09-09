@@ -182,7 +182,7 @@
                             <form
                                 method="POST"
                                 action="{{ route('bundle-offers.fulfill', $bundle) }}"
-                                data-confirm="Mark this bundle as collected/sold? Stock will be reduced for every item in the bundle."
+                                onsubmit="return confirm('Mark this bundle as collected/sold? Stock will be reduced for every item in the bundle.');"
                             >
                                 @csrf
 

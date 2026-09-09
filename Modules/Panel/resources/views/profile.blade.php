@@ -116,7 +116,7 @@
             <div class="card__head"><h2 class="card__title">{{ __('user::messages.delete_account') }}</h2></div>
             <div class="card__body">
                 <p class="text-muted">{{ __('user::messages.delete_account_lead') }}</p>
-                <form method="POST" action="{{ route('profile.destroy') }}" data-confirm="{{ __('user::messages.delete_account_lead') }}" class="stack stack--tight">
+                <form method="POST" action="{{ route('profile.destroy') }}" onsubmit="return confirm(@js(__('user::messages.delete_account_lead')));" class="stack stack--tight">
                     @csrf
                     @method('DELETE')
                     <div class="field">

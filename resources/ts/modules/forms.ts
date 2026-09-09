@@ -129,24 +129,6 @@ export const imagePreview = defineBehavior<HTMLInputElement>({
     },
 });
 
-export const confirmAction = defineBehavior<HTMLFormElement>({
-    name: 'confirm-action',
-    selector: '[data-confirm]',
-    mount(form) {
-        const message = attribute(form, 'data-confirm');
-
-        if (message === null) {
-            return;
-        }
-
-        form.addEventListener('submit', (event) => {
-            if (!window.confirm(message)) {
-                event.preventDefault();
-            }
-        });
-    },
-});
-
 export const ratingInput = defineBehavior<HTMLElement>({
     name: 'rating-input',
     selector: '[data-rating-input]',

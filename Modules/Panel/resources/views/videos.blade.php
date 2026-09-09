@@ -56,7 +56,7 @@
                     </div>
                     <div class="data-row__actions">
                         <a href="{{ route('panel.videos.edit', $video) }}" class="button button--secondary button--small">{{ __('panel::messages.edit') }}</a>
-                        <form method="POST" action="{{ route('panel.videos.destroy', $video) }}" data-confirm="{{ __('panel::messages.confirm_delete') }}">
+                        <form method="POST" action="{{ route('panel.videos.destroy', $video) }}" onsubmit="return confirm(@js(__('panel::messages.confirm_delete')));">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="button button--critical button--small">{{ __('panel::messages.delete') }}</button>

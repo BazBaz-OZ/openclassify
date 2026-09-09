@@ -275,7 +275,7 @@
                                         'photo' => $photo,
                                     ]
                                 ) }}"
-                                data-confirm="Remove this garage photo?"
+                                onsubmit="return confirm('Remove this garage photo?');"
                             >
                                 @csrf
                                 @method('DELETE')
@@ -889,7 +889,7 @@
                                             'item' => $item,
                                         ]
                                     ) }}"
-                                    data-confirm="{{ $hasDuplicate ? 'Skip this possible duplicate?' : 'Remove this item from the Virtual Garage?' }}"
+                                    onsubmit="return confirm(@js($hasDuplicate ? 'Skip this possible duplicate?' : 'Remove this item from the Virtual Garage?'));"
                                 >
                                     @csrf
 
