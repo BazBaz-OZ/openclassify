@@ -87,6 +87,7 @@ class CategorySeeder extends Seeder
                     'Fencing & Gates',
                     'Concrete & Landscaping Materials',
                     'Paint & Finishes',
+                    'Fasteners, Screws & Fixings',
                     'Fixtures & Fittings',
                     'Cabinets & Benchtops',
                     'Other Building Materials',
