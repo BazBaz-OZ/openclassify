@@ -830,6 +830,34 @@ class Listing extends Model implements HasMedia
             $payload['custom_fields'] = $attributes['custom_fields'];
         }
 
+        /*
+         * An active marketplace listing must always have an expiry.
+         *
+         * Seller edit forms may submit a blank expires_at value.
+         * Also protect callers that omit expires_at entirely when
+         * activating a historical listing that has no expiry.
+         */
+        $effectiveStatus =
+            isset($payload['status'])
+                ? (string) $payload['status']
+                : $this->statusValue();
+
+        if ($effectiveStatus === 'active') {
+            $expiryWasSupplied =
+                array_key_exists('expires_at', $payload);
+
+            $needsDefaultExpiry =
+                ($expiryWasSupplied && blank($payload['expires_at']))
+                || (! $expiryWasSupplied && ! $this->expires_at);
+
+            if ($needsDefaultExpiry) {
+                $payload['expires_at'] =
+                    now()->addDays(
+                        self::DEFAULT_PANEL_EXPIRY_WINDOW_DAYS
+                    );
+            }
+        }
+
         $this->forceFill($payload)->save();
     }
 
