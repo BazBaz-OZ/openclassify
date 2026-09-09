@@ -104,6 +104,12 @@ class QuickListingCategorySuggester
                     Rules:
                     - Use only IDs listed above.
                     - If unsure, set detected=false and category_id=null.
+- Do not classify an item as Antique, Vintage or Collectable merely because
+  it is decorative, ornate, old-fashioned in style, dusty or used.
+- Prefer an ordinary product category such as Home Decor or Figurines unless
+  there is clear visible evidence that the item is genuinely antique,
+  vintage or specifically collectable.
+- Do not infer age, rarity or provenance from appearance alone.
                     - Confidence must be between 0 and 1.
                     PROMPT,
                 attachments: [$image],

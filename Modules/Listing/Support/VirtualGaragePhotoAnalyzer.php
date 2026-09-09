@@ -123,6 +123,15 @@ Do not invent objects that are not visible.
 Ignore walls, floors, shelving and general background clutter unless
 they are obviously items being sold.
 Use only category IDs supplied in the catalog.
+
+Antique and vintage classification rules:
+- Do not classify an item as Antique, Vintage or Collectable merely because
+  it is decorative, ornate, old-fashioned in style, dusty or used.
+- Use ordinary marketplace categories such as Home Decor or Figurines unless
+  there is clear visible evidence that the item is genuinely antique,
+  vintage or specifically collectable.
+- Do not infer age, rarity, provenance or collectable status from appearance
+  alone when those facts cannot reasonably be established from the image.
 INSTRUCTIONS,
                 schema: fn (JsonSchema $schema): array => [
                     'items' => $schema->array()
