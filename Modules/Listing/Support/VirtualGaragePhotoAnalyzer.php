@@ -127,9 +127,12 @@ Use only category IDs supplied in the catalog.
 Antique and vintage classification rules:
 - Do not classify an item as Antique, Vintage or Collectable merely because
   it is decorative, ornate, old-fashioned in style, dusty or used.
-- Use ordinary marketplace categories such as Home Decor or Figurines unless
-  there is clear visible evidence that the item is genuinely antique,
-  vintage or specifically collectable.
+- Use Home Decor for ordinary decorative household objects, ornaments,
+  sculptures and busts unless there is clear evidence they are specifically
+  collectable.
+- Use Collectables > Figurines only when the object is recognisably intended
+  as a collectable figurine, such as a branded character, franchise item,
+  model, limited edition or other clearly collectable piece.
 - Do not infer age, rarity, provenance or collectable status from appearance
   alone when those facts cannot reasonably be established from the image.
 INSTRUCTIONS,
