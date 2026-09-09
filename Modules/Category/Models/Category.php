@@ -153,10 +153,54 @@ class Category extends Model
 
     public static function activeAiCatalog(): Collection
     {
-        return static::query()
+        $categories = static::query()
             ->active()
             ->ordered()
-            ->get(['id', 'name', 'parent_id']);
+            ->get(['id', 'name', 'parent_id', 'slug']);
+
+        $freeStuffRootId = $categories
+            ->firstWhere('slug', 'free-stuff')
+            ?->id;
+
+        if (! $freeStuffRootId) {
+            return $categories;
+        }
+
+        $excludedIds = collect([
+            (int) $freeStuffRootId,
+        ]);
+
+        while (true) {
+            $childIds = $categories
+                ->whereIn(
+                    'parent_id',
+                    $excludedIds->all()
+                )
+                ->pluck('id')
+                ->map(
+                    fn ($id): int => (int) $id
+                )
+                ->diff($excludedIds)
+                ->values();
+
+            if ($childIds->isEmpty()) {
+                break;
+            }
+
+            $excludedIds = $excludedIds
+                ->merge($childIds)
+                ->unique()
+                ->values();
+        }
+
+        return $categories
+            ->reject(
+                fn (self $category): bool =>
+                    $excludedIds->contains(
+                        (int) $category->id
+                    )
+            )
+            ->values();
     }
 
     public static function panelQuickCatalog(): array
