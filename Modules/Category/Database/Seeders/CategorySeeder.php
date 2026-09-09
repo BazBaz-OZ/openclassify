@@ -47,6 +47,7 @@ class CategorySeeder extends Seeder
                     'Vacuum Cleaners',
                     'Coffee Machines',
                     'Small Kitchen Appliances',
+                    'Personal Care Appliances',
                     'Other Appliances',
                 ],
             ],
