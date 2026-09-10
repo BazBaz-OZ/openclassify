@@ -1,0 +1,10 @@
+{$SMJ_DOMAIN} {
+	encode zstd gzip
+
+	route {
+		@reverb path /app/* /apps/*
+		reverse_proxy @reverb 127.0.0.1:18081
+
+		reverse_proxy 127.0.0.1:18080
+	}
+}
