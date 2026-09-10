@@ -1,0 +1,237 @@
+services:
+  vision:
+    build:
+      context: ./vision
+      dockerfile: Dockerfile
+    environment:
+      VISION_DATA_ROOT: /data
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+    volumes:
+      - storage_data:/data
+    expose:
+      - "8001"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3).read()"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY}
+        VITE_REVERB_HOST: ${VITE_REVERB_HOST}
+        VITE_REVERB_PORT: ${VITE_REVERB_PORT}
+        VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME}
+    ports:
+      - "127.0.0.1:18080:80"
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: ${APP_URL}
+      LOG_LEVEL: ${LOG_LEVEL:-warning}
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      SESSION_SECURE_COOKIE: "true"
+      SESSION_SAME_SITE: lax
+      QUEUE_CONNECTION: redis
+      BROADCAST_CONNECTION: reverb
+      FILESYSTEM_DISK: public
+    volumes:
+      - ./.env.production:/var/www/html/.env:ro
+      - storage_data:/var/www/html/storage/app
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1/up >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY}
+        VITE_REVERB_HOST: ${VITE_REVERB_HOST}
+        VITE_REVERB_PORT: ${VITE_REVERB_PORT}
+        VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME}
+    command: php -d memory_limit=768M artisan queue:work redis --sleep=2 --tries=3 --timeout=900
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: redis
+    volumes:
+      - ./.env.production:/var/www/html/.env:ro
+      - storage_data:/var/www/html/storage/app
+    healthcheck:
+      test:
+        - CMD
+        - php
+        - -r
+        - 'exit(str_contains(str_replace(chr(0), " ", file_get_contents("/proc/1/cmdline")), "artisan queue:work") ? 0 : 1);'
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY}
+        VITE_REVERB_HOST: ${VITE_REVERB_HOST}
+        VITE_REVERB_PORT: ${VITE_REVERB_PORT}
+        VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME}
+    command: php artisan schedule:work
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: redis
+    volumes:
+      - ./.env.production:/var/www/html/.env:ro
+      - storage_data:/var/www/html/storage/app
+    healthcheck:
+      test:
+        - CMD
+        - php
+        - -r
+        - 'exit(str_contains(str_replace(chr(0), " ", file_get_contents("/proc/1/cmdline")), "artisan schedule:work") ? 0 : 1);'
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  reverb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY}
+        VITE_REVERB_HOST: ${VITE_REVERB_HOST}
+        VITE_REVERB_PORT: ${VITE_REVERB_PORT}
+        VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME}
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    ports:
+      - "127.0.0.1:18081:8080"
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REVERB_HOST: reverb
+      REVERB_PORT: 8080
+      REVERB_SCHEME: http
+      REVERB_SERVER_HOST: 0.0.0.0
+      REVERB_SERVER_PORT: 8080
+    volumes:
+      - ./.env.production:/var/www/html/.env:ro
+      - storage_data:/var/www/html/storage/app
+    healthcheck:
+      test:
+        - CMD
+        - php
+        - -r
+        - 'exit(@fsockopen("127.0.0.1", 8080) ? 0 : 1);'
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  redis_data:
+  storage_data:

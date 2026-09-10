@@ -4,6 +4,7 @@ use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\StartSession;
 use Modules\Demo\App\Http\Middleware\ResolveDemoRequest;
 use Modules\Site\App\Http\Middleware\BootstrapAppData;
@@ -17,6 +18,21 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        /*
+         * Production TLS terminates at the trusted reverse proxy.
+         * The application container itself receives plain HTTP.
+         */
+        if (env('APP_ENV') === 'production') {
+            $middleware->trustProxies(
+                at: '*',
+                headers:
+                    Request::HEADER_X_FORWARDED_FOR
+                    | Request::HEADER_X_FORWARDED_HOST
+                    | Request::HEADER_X_FORWARDED_PORT
+                    | Request::HEADER_X_FORWARDED_PROTO,
+            );
+        }
+
         $middleware->validateCsrfTokens(
             except: [
                 'stripe/*',
