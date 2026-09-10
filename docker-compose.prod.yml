@@ -24,6 +24,8 @@ services:
     restart: unless-stopped
 
   app:
+    env_file:
+      - .env.production
     build:
       context: .
       dockerfile: Dockerfile
@@ -55,7 +57,6 @@ services:
       BROADCAST_CONNECTION: reverb
       FILESYSTEM_DISK: public
     volumes:
-      - ./.env.production:/var/www/html/.env:ro
       - storage_data:/var/www/html/storage/app
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1/up >/dev/null || exit 1"]
@@ -71,6 +72,8 @@ services:
     restart: unless-stopped
 
   queue:
+    env_file:
+      - .env.production
     build:
       context: .
       dockerfile: Dockerfile
@@ -94,7 +97,6 @@ services:
       SESSION_DRIVER: redis
       QUEUE_CONNECTION: redis
     volumes:
-      - ./.env.production:/var/www/html/.env:ro
       - storage_data:/var/www/html/storage/app
     healthcheck:
       test:
@@ -114,6 +116,8 @@ services:
     restart: unless-stopped
 
   scheduler:
+    env_file:
+      - .env.production
     build:
       context: .
       dockerfile: Dockerfile
@@ -137,7 +141,6 @@ services:
       SESSION_DRIVER: redis
       QUEUE_CONNECTION: redis
     volumes:
-      - ./.env.production:/var/www/html/.env:ro
       - storage_data:/var/www/html/storage/app
     healthcheck:
       test:
@@ -157,6 +160,8 @@ services:
     restart: unless-stopped
 
   reverb:
+    env_file:
+      - .env.production
     build:
       context: .
       dockerfile: Dockerfile
@@ -184,7 +189,6 @@ services:
       REVERB_SERVER_HOST: 0.0.0.0
       REVERB_SERVER_PORT: 8080
     volumes:
-      - ./.env.production:/var/www/html/.env:ro
       - storage_data:/var/www/html/storage/app
     healthcheck:
       test:

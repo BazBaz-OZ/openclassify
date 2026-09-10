@@ -1,9 +1,16 @@
 #!/bin/sh
 set -e
 
-if [ ! -f /var/www/html/.env ]; then
-    cp /var/www/html/.env.example /var/www/html/.env
-    php artisan key:generate --force
+if [ "${APP_ENV:-local}" = "production" ]; then
+    if [ -z "${APP_KEY:-}" ]; then
+        echo "ERROR: APP_KEY must be provided in production."
+        exit 1
+    fi
+else
+    if [ ! -f /var/www/html/.env ]; then
+        cp /var/www/html/.env.example /var/www/html/.env
+        php artisan key:generate --force
+    fi
 fi
 
 if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
