@@ -114,6 +114,7 @@ services:
     restart: unless-stopped
 
   reverb:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile
