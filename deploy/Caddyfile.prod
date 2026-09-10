@@ -1,4 +1,8 @@
-{$SMJ_DOMAIN} {
+www.sellmyjunk.com.au {
+	redir https://sellmyjunk.com.au{uri} permanent
+}
+
+sellmyjunk.com.au {
 	encode zstd gzip
 
 	route {
