@@ -156,6 +156,10 @@
     }
 
 </style>
+<meta
+    name="reverb-app-key"
+    content="{{ config('broadcasting.connections.reverb.key') }}"
+>
 </head>
 <body data-inbox-channel="{{ $isAuthenticated ? 'users.'.auth()->id().'.inbox' : '' }}">
 

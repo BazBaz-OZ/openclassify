@@ -18,7 +18,7 @@ class PromotionPlanSeeder extends Seeder
 
     private function records(): array
     {
-        $currency = (string) config('app.default_currency', 'USD');
+        $currency = (string) config('app.currencies.0', 'AUD');
 
         return [
             [

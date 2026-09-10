@@ -40,16 +40,30 @@ function echoClient(): Echo<'reverb'> | null {
         return window.Echo;
     }
 
-    const key = import.meta.env['VITE_REVERB_APP_KEY'];
+    const key =
+        import.meta.env['VITE_REVERB_APP_KEY'] ||
+        document
+            .querySelector<HTMLMetaElement>('meta[name="reverb-app-key"]')
+            ?.content;
 
     if (!key) {
         console.warn('Reverb app key is missing.');
         return null;
     }
 
-    const scheme = import.meta.env['VITE_REVERB_SCHEME'] ?? 'http';
-    const host = import.meta.env['VITE_REVERB_HOST'] ?? window.location.hostname;
-    const port = Number(import.meta.env['VITE_REVERB_PORT'] ?? 8080);
+    const scheme =
+        import.meta.env['VITE_REVERB_SCHEME'] ||
+        (window.location.protocol === 'https:' ? 'https' : 'http');
+
+    const host =
+        import.meta.env['VITE_REVERB_HOST'] ||
+        window.location.hostname;
+
+    const port = Number(
+        import.meta.env['VITE_REVERB_PORT'] ||
+            window.location.port ||
+            (scheme === 'https' ? 443 : 80),
+    );
 
     window.Pusher = Pusher;
 

@@ -10,8 +10,8 @@
         <h1 class="title-page">{{ $title }}</h1>
         <p class="empty-state__text">{{ $message }}</p>
         <div class="row row--wrap" style="justify-content:center">
-            <a href="{{ route('home') }}" class="button button--primary">{{ __('site::messages.home') }}</a>
-            <a href="{{ route('listings.index') }}" class="button button--secondary">{{ __('site::messages.browse') }}</a>
+            <a href="{{ app('router')->has('home') ? route('home') : url('/') }}" class="button button--primary">{{ __('site::messages.home') }}</a>
+            <a href="{{ app('router')->has('listings.index') ? route('listings.index') : url('/') }}" class="button button--secondary">{{ __('site::messages.browse') }}</a>
         </div>
     </div>
 </div>
