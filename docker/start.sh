@@ -6,7 +6,9 @@ if [ ! -f /var/www/html/.env ]; then
     php artisan key:generate --force
 fi
 
-php artisan migrate --force
+if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
+    php artisan migrate --force
+fi
 # php artisan db:seed --force
 php artisan config:clear
 php artisan route:clear

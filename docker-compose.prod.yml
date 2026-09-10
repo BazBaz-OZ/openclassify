@@ -39,6 +39,7 @@ services:
       APP_DEBUG: "false"
       APP_URL: ${APP_URL}
       LOG_LEVEL: ${LOG_LEVEL:-warning}
+      RUN_MIGRATIONS: "false"
       DB_CONNECTION: pgsql
       DB_HOST: db
       DB_PORT: 5432
