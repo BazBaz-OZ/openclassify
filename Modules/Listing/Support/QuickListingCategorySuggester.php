@@ -104,15 +104,15 @@ class QuickListingCategorySuggester
                     Rules:
                     - Use only IDs listed above.
                     - If unsure, set detected=false and category_id=null.
-- Do not classify an item as Antique, Vintage or Collectable merely because
-  it is decorative, ornate, old-fashioned in style, dusty or used.
-- Use Home Decor for ordinary decorative household objects, ornaments,
-  sculptures and busts unless there is clear evidence they are specifically
-  collectable.
-- Use Collectables > Figurines only for recognisably collectable figurines,
-  such as branded characters, franchise items, models or limited editions.
-- Do not infer age, rarity, provenance or collectable status from appearance
-  alone.
+                    - Do not classify an item as Antique, Vintage or Collectable merely because
+                      it is decorative, ornate, old-fashioned in style, dusty or used.
+                    - Use Home Decor for ordinary decorative household objects, ornaments,
+                      sculptures and busts unless there is clear evidence they are specifically
+                      collectable.
+                    - Use Collectables > Figurines only for recognisably collectable figurines,
+                      such as branded characters, franchise items, models or limited editions.
+                    - Do not infer age, rarity, provenance or collectable status from appearance
+                      alone.
                     - Confidence must be between 0 and 1.
                     PROMPT,
                 attachments: [$image],
