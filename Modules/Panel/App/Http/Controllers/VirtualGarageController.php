@@ -571,9 +571,29 @@ class VirtualGarageController extends Controller
          * Reject the entire upload before storing any files
          * if it would exceed the user's remaining AI scans.
          */
-        $remainingScans = $entitlement->remaining($user);
+        $photoCount =
+            count($validated['photos']);
 
-        if (count($validated['photos']) > $remainingScans) {
+        /*
+         * Reserve the whole batch before storing photo #1.
+         * This prevents another request from consuming scans
+         * halfway through this upload.
+         */
+        $reservations = $entitlement->reserveScans(
+            $user,
+            $photoCount,
+            'virtual_garage',
+            null,
+            [
+                'virtual_garage_id' =>
+                    (int) $virtualGarage->getKey(),
+                'batch_upload' => true,
+            ]
+        );
+
+        if ($reservations === null) {
+            $remainingScans =
+                $entitlement->remaining($user);
             return back()
                 ->withErrors([
                     'virtual_garage' =>
@@ -600,7 +620,8 @@ class VirtualGarageController extends Controller
                 ->max('sort_order') ?? -1
         ) + 1;
 
-        foreach ($validated['photos'] as $index => $photo) {
+        try {
+            foreach ($validated['photos'] as $index => $photo) {
             /*
              * Privacy protection:
              *
@@ -648,15 +669,13 @@ class VirtualGarageController extends Controller
                         $nextSort + $index,
                 ]);
 
-            if (! $entitlement->canScan($user)) {
-                return back()
-                    ->withErrors([
-                        'virtual_garage' =>
-                            $entitlement
-                                ->exhaustedMessage(
-                                    $user
-                                ),
-                    ]);
+            $reservation =
+                $reservations[$index] ?? null;
+
+            if (! $reservation) {
+                throw new \RuntimeException(
+                    'AI reservation missing for garage photo.'
+                );
             }
 
             $analysis = app(
@@ -664,9 +683,8 @@ class VirtualGarageController extends Controller
             )->analyze($photo);
 
             if (blank($analysis['error'] ?? null)) {
-                $entitlement->recordSuccess(
-                    $user,
-                    'virtual_garage',
+                $entitlement->completeSuccess(
+                    $reservation,
                     (int) $garagePhoto->getKey(),
                     [
                         'virtual_garage_id' =>
@@ -774,9 +792,8 @@ class VirtualGarageController extends Controller
                         VirtualGaragePhoto::STATUS_PROCESSED,
                 ]);
             } else {
-                $entitlement->recordFailure(
-                    $user,
-                    'virtual_garage',
+                $entitlement->completeFailure(
+                    $reservation,
                     (int) $garagePhoto->getKey(),
                     [
                         'virtual_garage_id' =>
@@ -789,6 +806,22 @@ class VirtualGarageController extends Controller
                     ]
                 );
             }
+        }
+
+        } catch (\Throwable $exception) {
+            $entitlement->failPendingReservations(
+                $reservations,
+                [
+                    'virtual_garage_id' =>
+                        (int) $virtualGarage->getKey(),
+                    'batch_upload' => true,
+                    'aborted' => true,
+                    'error' =>
+                        $exception->getMessage(),
+                ]
+            );
+
+            throw $exception;
         }
 
         $detectedCount =
@@ -836,7 +869,29 @@ class VirtualGarageController extends Controller
          * Retry AI is also an AI scan and must obey
          * the same account allowance.
          */
-        if (! $entitlement->canScan($user)) {
+        $path = \Illuminate\Support\Facades\Storage::disk(
+            $photo->disk
+        )->path($photo->path);
+
+        /*
+         * Verify the stored source exists before consuming
+         * an AI reservation. A missing file should return 404
+         * without temporarily reducing the user's allowance.
+         */
+        abort_unless(is_file($path), 404);
+
+        $reservation = $entitlement->reserveScan(
+            $user,
+            'virtual_garage',
+            (int) $photo->getKey(),
+            [
+                'virtual_garage_id' =>
+                    (int) $virtualGarage->getKey(),
+                'retry' => true,
+            ]
+        );
+
+        if (! $reservation) {
             return back()
                 ->withErrors([
                     'virtual_garage_ai' =>
@@ -846,12 +901,6 @@ class VirtualGarageController extends Controller
                 ]);
         }
 
-        $path = \Illuminate\Support\Facades\Storage::disk(
-            $photo->disk
-        )->path($photo->path);
-
-        abort_unless(is_file($path), 404);
-
         $file = new \Illuminate\Http\UploadedFile(
             $path,
             $photo->original_name ?: basename($photo->path),
@@ -860,14 +909,29 @@ class VirtualGarageController extends Controller
             true
         );
 
-        $analysis = app(
-            VirtualGaragePhotoAnalyzer::class
-        )->analyze($file);
+        try {
+            $analysis = app(
+                VirtualGaragePhotoAnalyzer::class
+            )->analyze($file);
+        } catch (\Throwable $exception) {
+            $entitlement->failPendingReservations(
+                [$reservation],
+                [
+                    'virtual_garage_id' =>
+                        (int) $virtualGarage->getKey(),
+                    'retry' => true,
+                    'aborted' => true,
+                    'error' =>
+                        $exception->getMessage(),
+                ]
+            );
+
+            throw $exception;
+        }
 
         if (filled($analysis['error'] ?? null)) {
-            $entitlement->recordFailure(
-                $user,
-                'virtual_garage',
+            $entitlement->completeFailure(
+                $reservation,
                 (int) $photo->getKey(),
                 [
                     'virtual_garage_id' =>
@@ -883,9 +947,8 @@ class VirtualGarageController extends Controller
             ]);
         }
 
-        $entitlement->recordSuccess(
-            $user,
-            'virtual_garage',
+        $entitlement->completeSuccess(
+            $reservation,
             (int) $photo->getKey(),
             [
                 'virtual_garage_id' =>

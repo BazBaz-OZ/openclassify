@@ -334,7 +334,16 @@ class PanelQuickListingForm extends Component
             AiEntitlement::class
         );
 
-        if (! $entitlement->canScan($user)) {
+        $reservation = $entitlement->reserveScan(
+            $user,
+            'listing_category',
+            null,
+            [
+                'source' => 'quick_listing',
+            ]
+        );
+
+        if (! $reservation) {
             $this->detectedError =
                 $entitlement->exhaustedMessage(
                     $user
@@ -427,9 +436,8 @@ class PanelQuickListingForm extends Component
                     ]
                 );
 
-                $entitlement->recordSuccess(
-                    $user,
-                    'listing_category',
+                $entitlement->completeSuccess(
+                    $reservation,
                     null,
                     [
                         'detected' =>
@@ -440,9 +448,8 @@ class PanelQuickListingForm extends Component
                     ]
                 );
             } else {
-                $entitlement->recordFailure(
-                    $user,
-                    'listing_category',
+                $entitlement->completeFailure(
+                    $reservation,
                     null,
                     [
                         'error' =>
@@ -457,6 +464,18 @@ class PanelQuickListingForm extends Component
                     $this->detectedCategoryId
                 );
             }
+        } catch (Throwable $exception) {
+            $entitlement->failPendingReservations(
+                [$reservation],
+                [
+                    'source' => 'quick_listing',
+                    'aborted' => true,
+                    'error' =>
+                        $exception->getMessage(),
+                ]
+            );
+
+            throw $exception;
         } finally {
             if (
                 is_string($sanitizedAiPath)

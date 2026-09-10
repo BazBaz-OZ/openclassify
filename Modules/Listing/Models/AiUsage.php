@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AiUsage extends Model
 {
+    public const STATUS_PENDING = 'pending';
     public const STATUS_SUCCESS = 'success';
     public const STATUS_FAILED = 'failed';
 
