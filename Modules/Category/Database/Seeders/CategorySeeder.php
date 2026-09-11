@@ -408,12 +408,25 @@ class CategorySeeder extends Seeder
                 foreach ($data['children'] as $childIndex => $childName) {
                     $childSlug = $data['slug'].'-'.Str::slug($childName);
 
+                    $childIconFilename = Str::of($childName)
+                        ->ascii()
+                        ->lower()
+                        ->replace('&', ' and ')
+                        ->replaceMatches('/[^a-z0-9]+/', '_')
+                        ->trim('_')
+                        ->append('.png')
+                        ->toString();
+
+                    $childIcon = 'img/category/'.$childIconFilename;
+
                     Category::updateOrCreate(
                         ['slug' => $childSlug],
                         [
                             'name' => $childName,
                             'slug' => $childSlug,
-                            'icon' => null,
+                            'icon' => file_exists(public_path($childIcon))
+                                ? $childIcon
+                                : null,
                             'parent_id' => $parent->id,
                             'level' => 1,
                             'sort_order' => $childIndex,
