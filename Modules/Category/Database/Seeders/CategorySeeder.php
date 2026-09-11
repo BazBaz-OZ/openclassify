@@ -36,7 +36,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Appliances',
                 'slug' => 'appliances',
-                'icon' => 'img/category/home_tools.png',
+                'icon' => 'img/category/appliances.png',
                 'children' => [
                     'Fridges & Freezers',
                     'Washing Machines & Dryers',
@@ -54,7 +54,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Furniture & Homewares',
                 'slug' => 'furniture-homewares',
-                'icon' => 'img/category/home_garden.png',
+                'icon' => 'img/category/furniture_and_homewares.png',
                 'children' => [
                     'Sofas & Lounge Furniture',
                     'Beds & Bedroom Furniture',
@@ -72,7 +72,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Excess Building Materials',
                 'slug' => 'excess-building-materials',
-                'icon' => 'img/category/home_tools.png',
+                'icon' => 'img/category/excess_building_materials.png',
                 'children' => [
                     'Timber',
                     'Tiles',
@@ -97,7 +97,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Tools & DIY',
                 'slug' => 'tools-diy',
-                'icon' => 'img/category/home_tools.png',
+                'icon' => 'img/category/tools_and_diy.png',
                 'children' => [
                     'Corded Power Tools',
                     'Cordless & Battery Tools',
@@ -115,7 +115,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Automotive Parts & Accessories',
                 'slug' => 'automotive-parts-accessories',
-                'icon' => 'img/category/car.png',
+                'icon' => 'img/category/automotive_parts_and_accessories.png',
                 'children' => [
                     'Car Parts',
                     'Motorcycle Parts',
@@ -135,7 +135,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Garden & Outdoor',
                 'slug' => 'garden-outdoor',
-                'icon' => 'img/category/home_garden.png',
+                'icon' => 'img/category/garden_and_outdoor.png',
                 'children' => [
                     'Plants & Pots',
                     'Garden Furniture',
@@ -152,7 +152,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Sports & Fitness',
                 'slug' => 'sports',
-                'icon' => 'img/category/sports.png',
+                'icon' => 'img/category/sports_and_fitness.png',
                 'children' => [
                     'Gym & Fitness Equipment',
                     'Bikes & Cycling',
@@ -168,7 +168,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Fashion',
                 'slug' => 'fashion',
-                'icon' => 'img/category/phone.png',
+                'icon' => 'img/category/fashion.png',
                 'children' => [
                     "Men's Clothing",
                     "Women's Clothing",
@@ -185,7 +185,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Toys, Kids & Baby',
                 'slug' => 'toys-kids-baby',
-                'icon' => 'img/category/home_garden.png',
+                'icon' => 'img/category/toys_kids_and_baby.png',
                 'children' => [
                     'Toys',
                     'Baby Equipment',
@@ -201,7 +201,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Games & Gaming',
                 'slug' => 'games-gaming',
-                'icon' => 'img/category/electronics.png',
+                'icon' => 'img/category/games_and_gaming.png',
                 'children' => [
                     'Gaming Consoles',
                     'Video Games',
@@ -216,7 +216,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Collectables',
                 'slug' => 'collectables',
-                'icon' => 'img/category/home_garden.png',
+                'icon' => 'img/category/collectables.png',
                 'children' => [
                     'Coins & Banknotes',
                     'Stamps',
@@ -233,7 +233,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Antiques',
                 'slug' => 'antiques',
-                'icon' => 'img/category/home_garden.png',
+                'icon' => 'img/category/antiques.png',
                 'children' => [
                     'Antique Furniture',
                     'Ceramics & Glassware',
@@ -248,7 +248,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Books & Media',
                 'slug' => 'books-media',
-                'icon' => 'img/category/education.png',
+                'icon' => 'img/category/books_and_media.png',
                 'children' => [
                     'Books',
                     'Textbooks',
@@ -264,7 +264,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Office & Business Equipment',
                 'slug' => 'office-business-equipment',
-                'icon' => 'img/category/laptop.png',
+                'icon' => 'img/category/office_and_business_equipment.png',
                 'children' => [
                     'Desks',
                     'Office Chairs',
@@ -284,7 +284,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Hobbies & Crafts',
                 'slug' => 'hobbies-crafts',
-                'icon' => 'img/category/home_tools.png',
+                'icon' => 'img/category/hobbies_and_crafts.png',
                 'children' => [
                     'Model Kits',
                     'RC Cars, Boats & Aircraft',
@@ -300,7 +300,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Pet Supplies',
                 'slug' => 'pet-supplies',
-                'icon' => 'img/category/pet.png',
+                'icon' => 'img/category/pet_supplies.png',
                 'children' => [
                     'Beds & Bedding',
                     'Crates, Cages & Carriers',
@@ -317,7 +317,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Free Stuff',
                 'slug' => 'free-stuff',
-                'icon' => 'img/category/home_garden.png',
+                'icon' => 'img/category/free_stuff.png',
                 'children' => [
                     'Free Furniture',
                     'Free Building Materials',
@@ -332,7 +332,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Other / Miscellaneous',
                 'slug' => 'other-miscellaneous',
-                'icon' => 'img/category/home_tools.png',
+                'icon' => 'img/category/other_miscellaneous.png',
                 'children' => [
                     'Other Items',
                 ],
