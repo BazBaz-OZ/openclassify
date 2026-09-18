@@ -374,6 +374,45 @@ class VirtualGarageController extends Controller
             );
         }
 
+        /*
+         * Give the seller an immediate membership-limit
+         * message before queuing any publication work.
+         *
+         * The final activation is still checked atomically
+         * by activateGarageWithinLimit().
+         */
+        if (
+            $virtualGarage->status
+                === VirtualGarage::STATUS_DRAFT
+        ) {
+            $entitlement = app(
+                AiEntitlement::class
+            );
+
+            if (
+                ! $entitlement->canActivateGarage(
+                    $request->user(),
+                    $virtualGarage
+                )
+            ) {
+                $limit =
+                    $entitlement->activeGarageLimit(
+                        $request->user()
+                    );
+
+                return back()->withErrors([
+                    'virtual_garage' =>
+                        'Your membership allows '
+                        .$limit
+                        .' active Virtual Garage'
+                        .($limit === 1 ? '' : 's')
+                        .'. Complete an active garage '
+                        .'or upgrade your membership '
+                        .'before publishing another.',
+                ]);
+            }
+        }
+
         $draftItems = $virtualGarage
             ->items()
             ->where(
@@ -495,14 +534,33 @@ class VirtualGarageController extends Controller
                 $virtualGarage->status
                     === VirtualGarage::STATUS_DRAFT
             ) {
-                $virtualGarage->update([
-                    'status' =>
-                        VirtualGarage::STATUS_ACTIVE,
+                $entitlement = app(
+                    AiEntitlement::class
+                );
 
-                    'starts_at' =>
-                        $virtualGarage->starts_at
-                            ?? now(),
-                ]);
+                if (
+                    ! $entitlement
+                        ->activateGarageWithinLimit(
+                            $virtualGarage
+                        )
+                ) {
+                    $limit =
+                        $entitlement
+                            ->activeGarageLimit(
+                                $request->user()
+                            );
+
+                    return back()->withErrors([
+                        'virtual_garage' =>
+                            'Your membership allows '
+                            .$limit
+                            .' active Virtual Garage'
+                            .($limit === 1 ? '' : 's')
+                            .'. Complete an active garage '
+                            .'or upgrade your membership '
+                            .'before publishing another.',
+                    ]);
+                }
 
                 return back()->with(
                     'success',
@@ -573,6 +631,39 @@ class VirtualGarageController extends Controller
          */
         $photoCount =
             count($validated['photos']);
+
+        /*
+         * Membership photo limit is per Virtual Garage.
+         * Reject the whole batch before reserving AI scans
+         * or storing any files.
+         */
+        $photoLimit =
+            $entitlement->photoLimit($user);
+
+        $existingPhotoCount =
+            $virtualGarage->photos()->count();
+
+        if (
+            $existingPhotoCount + $photoCount
+                > $photoLimit
+        ) {
+            $remainingPhotoSlots = max(
+                0,
+                $photoLimit - $existingPhotoCount
+            );
+
+            return back()->withErrors([
+                'virtual_garage' =>
+                    'Your membership allows up to '
+                    .$photoLimit
+                    .' photos in each Virtual Garage. '
+                    .'This garage has '
+                    .$existingPhotoCount
+                    .' photo(s), leaving '
+                    .$remainingPhotoSlots
+                    .' available.',
+            ]);
+        }
 
         /*
          * Reserve the whole batch before storing photo #1.

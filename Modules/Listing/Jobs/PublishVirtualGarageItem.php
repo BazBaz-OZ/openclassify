@@ -450,14 +450,11 @@ class PublishVirtualGarageItem implements ShouldQueue
             return;
         }
 
-        $garage->update([
-            'status' =>
-                VirtualGarage::STATUS_ACTIVE,
-
-            'starts_at' =>
-                $garage->starts_at
-                    ?? now(),
-        ]);
+        app(
+            \Modules\Listing\Support\AiEntitlement::class
+        )->activateGarageWithinLimit(
+            $garage
+        );
     }
 
     public function failed(

@@ -6,6 +6,7 @@ namespace Modules\Listing\Support;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Listing\Models\AiUsage;
+use Modules\Listing\Models\VirtualGarage;
 use Modules\User\App\Models\User;
 use RuntimeException;
 
@@ -55,6 +56,101 @@ class AiEntitlement
         }
 
         return 'free';
+    }
+
+    public function activeGarageLimit(User $user): int
+    {
+        return (int) config(
+            'membership.plans.'
+                .$this->plan($user)
+                .'.active_virtual_garages',
+            1
+        );
+    }
+
+    public function photoLimit(User $user): int
+    {
+        return (int) config(
+            'membership.plans.'
+                .$this->plan($user)
+                .'.virtual_garage_photos',
+            5
+        );
+    }
+
+    public function canActivateGarage(
+        User $user,
+        ?VirtualGarage $garage = null
+    ): bool {
+        $query = VirtualGarage::query()
+            ->ownedByUser($user->getKey())
+            ->active();
+
+        if ($garage && $garage->exists) {
+            $query->where(
+                'id',
+                '!=',
+                $garage->getKey()
+            );
+        }
+
+        return $query->count()
+            < $this->activeGarageLimit($user);
+    }
+
+    public function activateGarageWithinLimit(
+        VirtualGarage $garage
+    ): bool {
+        return DB::transaction(function () use ($garage): bool {
+            /*
+             * Lock one stable row per account so two garage
+             * publications cannot both consume the final slot.
+             */
+            $user = User::query()
+                ->whereKey($garage->user_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $lockedGarage = VirtualGarage::query()
+                ->whereKey($garage->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (
+                $lockedGarage->status
+                    === VirtualGarage::STATUS_ACTIVE
+            ) {
+                return true;
+            }
+
+            $activeCount = VirtualGarage::query()
+                ->ownedByUser($user->getKey())
+                ->active()
+                ->where(
+                    'id',
+                    '!=',
+                    $lockedGarage->getKey()
+                )
+                ->count();
+
+            if (
+                $activeCount
+                    >= $this->activeGarageLimit($user)
+            ) {
+                return false;
+            }
+
+            $lockedGarage->update([
+                'status' =>
+                    VirtualGarage::STATUS_ACTIVE,
+
+                'starts_at' =>
+                    $lockedGarage->starts_at
+                        ?? now(),
+            ]);
+
+            return true;
+        });
     }
 
     public function allowance(User $user): int
