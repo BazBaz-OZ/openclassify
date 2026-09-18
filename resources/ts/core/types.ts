@@ -21,6 +21,7 @@ export interface InboxState {
 }
 
 export interface InboxMessagePayload {
+    readonly messageId: number;
     readonly conversationId: number;
     readonly body: string;
     readonly senderId: number;

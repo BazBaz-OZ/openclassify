@@ -22,6 +22,7 @@ function isInboxPayload(value: unknown): value is InboxMessagePayload {
     const candidate = value as Record<string, unknown>;
 
     return (
+        typeof candidate['messageId'] === 'number' &&
         typeof candidate['conversationId'] === 'number' &&
         typeof candidate['body'] === 'string' &&
         typeof candidate['senderId'] === 'number' &&

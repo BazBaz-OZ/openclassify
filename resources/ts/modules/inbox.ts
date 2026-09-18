@@ -24,9 +24,20 @@ function isSentMessage(value: unknown): value is SentMessage {
     );
 }
 
-function appendBubble(list: HTMLElement, body: string, timestamp: string, outgoing: boolean): void {
+function appendBubble(
+    list: HTMLElement,
+    messageId: number,
+    body: string,
+    timestamp: string,
+    outgoing: boolean,
+): void {
+    if (list.querySelector(`[data-message-id="${messageId}"]`) !== null) {
+        return;
+    }
+
     const item = document.createElement('li');
     item.className = outgoing ? 'thread__bubble thread__bubble--out' : 'thread__bubble thread__bubble--in';
+    item.dataset['messageId'] = String(messageId);
 
     const text = document.createElement('p');
     text.className = 'thread__text';
@@ -51,9 +62,17 @@ export const inboxThread = defineBehavior<HTMLElement>({
         const field = query<HTMLTextAreaElement>('[data-thread-input]', HTMLTextAreaElement, root);
         const submit = query<HTMLButtonElement>('[data-thread-submit]', HTMLButtonElement, root);
         const conversationId = numericAttribute(root, 'data-inbox-thread');
+        const viewerId = numericAttribute(root, 'data-thread-viewer');
         const endpoint = attribute(root, 'data-thread-endpoint');
 
-        if (list === null || form === null || field === null || conversationId === null || endpoint === null) {
+        if (
+            list === null
+            || form === null
+            || field === null
+            || conversationId === null
+            || viewerId === null
+            || endpoint === null
+        ) {
             return;
         }
 
@@ -91,7 +110,13 @@ export const inboxThread = defineBehavior<HTMLElement>({
                 }
 
                 field.value = '';
-                appendBubble(list, result.value.message.body, result.value.message.createdAt, true);
+                appendBubble(
+                    list,
+                    result.value.message.id,
+                    result.value.message.body,
+                    result.value.message.createdAt,
+                    true,
+                );
                 field.focus();
             });
         };
@@ -113,7 +138,13 @@ export const inboxThread = defineBehavior<HTMLElement>({
                 return;
             }
 
-            appendBubble(list, message.body, message.createdAt, false);
+            appendBubble(
+                list,
+                message.messageId,
+                message.body,
+                message.createdAt,
+                message.senderId === viewerId,
+            );
         });
     },
 });

@@ -58,6 +58,7 @@
                 <div
                     class="thread-view"
                     data-inbox-thread="{{ $selectedConversation->getKey() }}"
+                    data-thread-viewer="{{ $viewerId }}"
                     data-thread-endpoint="{{ route('conversations.messages.send', $selectedConversation) }}"
                 >
                     <div class="thread__head">
@@ -165,7 +166,10 @@
                     <ul class="thread__messages" data-thread-messages>
                         @foreach($selectedConversation->getRelation('messages') as $message)
                             @php $outgoing = (int) $message->getAttribute('sender_id') === $viewerId; @endphp
-                            <li class="thread__bubble {{ $outgoing ? 'thread__bubble--out' : 'thread__bubble--in' }}">
+                            <li
+                                class="thread__bubble {{ $outgoing ? 'thread__bubble--out' : 'thread__bubble--in' }}"
+                                data-message-id="{{ $message->getKey() }}"
+                            >
                                 <p class="thread__text">{{ $message->getAttribute('body') }}</p>
                                 <time class="thread__time" datetime="{{ $message->getAttribute('created_at')?->toIso8601String() }}">
                                     {{ $message->getAttribute('created_at')?->format('H:i') }}

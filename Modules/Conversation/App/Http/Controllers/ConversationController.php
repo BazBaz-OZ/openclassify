@@ -397,6 +397,7 @@ class ConversationController extends Controller
             $event = new InboxMessageCreated(
                 $participantId,
                 [
+                    'messageId' => (int) $message->getKey(),
                     'conversationId' => (int) $conversation->getKey(),
                     'body' => (string) $message->body,
                     'senderId' => (int) $message->sender_id,
