@@ -340,6 +340,28 @@ Choose the Sell My Junk plan that suits how much you sell.
                             >
                                 Current plan
                             </span>
+
+                            @if($key !== 'free')
+                                <form
+                                    method="POST"
+                                    action="{{ route(
+                                        'membership.manage'
+                                    ) }}"
+                                    style="margin-top: 10px;"
+                                >
+                                    @csrf
+
+                                    <button
+                                        type="submit"
+                                        class="
+                                            membership-button
+                                            membership-button--secondary
+                                        "
+                                    >
+                                        Manage subscription
+                                    </button>
+                                </form>
+                            @endif
                         @elseif($key === 'free')
                             <span
                                 class="

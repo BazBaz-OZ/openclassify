@@ -25,6 +25,17 @@ Route::middleware('web')->group(function () {
         ->name('dashboard');
 
     Route::post(
+        '/membership/manage',
+        function (\Illuminate\Http\Request $request) {
+            return $request->user()->redirectToBillingPortal(
+                route('membership')
+            );
+        }
+    )
+        ->middleware('auth')
+        ->name('membership.manage');
+
+    Route::post(
         '/membership/checkout/{plan}',
         function (
             \Illuminate\Http\Request $request,
