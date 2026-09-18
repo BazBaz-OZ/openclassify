@@ -50,7 +50,6 @@ Route::middleware(['web', 'auth'])->group(function (): void {
 
     Route::name('offers.')->group(function (): void {
         Route::post('/listings/{listing}/offers', [OfferController::class, 'store'])
-            ->whereNumber('listing')
             ->middleware('throttle:20,1')
             ->name('store');
 

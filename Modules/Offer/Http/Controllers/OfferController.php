@@ -75,7 +75,7 @@ class OfferController extends Controller
             $buyerId,
             $sellerId,
             (float) $validated['amount'],
-            (string) $request->input('currency', config('app.default_currency', 'USD')),
+            strtoupper((string) ($listing->getAttribute('currency') ?: 'AUD')),
             $validated['message'] ?? null,
         );
 
