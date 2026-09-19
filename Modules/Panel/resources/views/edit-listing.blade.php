@@ -205,15 +205,88 @@
 
     <aside class="stack stack--loose">
         <section class="card">
-            <div class="card__head"><h2 class="card__title">{{ __('panel::messages.location') }}</h2></div>
+            <div class="card__head">
+                <h2 class="card__title">Pickup &amp; delivery</h2>
+            </div>
+
             <div class="card__body">
+                @php
+                    $editFulfilmentMethod = old(
+                        'fulfilment_method',
+                        $listing->getAttribute('fulfilment_method')
+                    );
+
+                    $editPickupCity = old(
+                        'city',
+                        $listing->getAttribute('city')
+                    );
+                @endphp
+
                 <div class="field">
-                    <label class="field__label" for="country">{{ __('site::messages.country') }}</label>
-                    <input id="country" type="text" name="country" value="{{ old('country', $listing->getAttribute('country')) }}" class="input">
+                    <label class="field__label" for="fulfilment_method">
+                        How will the buyer receive the item?
+                    </label>
+
+                    <select
+                        id="fulfilment_method"
+                        name="fulfilment_method"
+                        class="select"
+                        data-fulfilment-method
+                    >
+                        <option value="" @selected(blank($editFulfilmentMethod))>
+                            Select pickup or delivery
+                        </option>
+                        <option value="pickup" @selected($editFulfilmentMethod === 'pickup')>
+                            Pickup only
+                        </option>
+                        <option value="delivery" @selected($editFulfilmentMethod === 'delivery')>
+                            Australia-wide delivery
+                        </option>
+                        <option value="both" @selected($editFulfilmentMethod === 'both')>
+                            Pickup + Australia-wide delivery
+                        </option>
+                    </select>
+
+                    @error('fulfilment_method')
+                        <p class="field__error" data-fulfilment-error>{{ $message }}</p>
+                    @enderror
                 </div>
-                <div class="field">
-                    <label class="field__label" for="city">{{ __('site::messages.city') }}</label>
-                    <input id="city" type="text" name="city" value="{{ old('city', $listing->getAttribute('city')) }}" class="input">
+
+                <input type="hidden" name="country" value="Australia">
+
+                <div
+                    class="field"
+                    data-pickup-location
+                    @if($editFulfilmentMethod === 'delivery') hidden @endif
+                >
+                    <label class="field__label" for="city">
+                        Pickup suburb / area
+                    </label>
+
+                    <input
+                        id="city"
+                        type="text"
+                        name="city"
+                        value="{{ $editPickupCity }}"
+                        class="input"
+                        placeholder="e.g. Springfield Lakes"
+                    >
+
+                    <p class="field__hint">
+                        Only your suburb / area is shown publicly — not your street address.
+                    </p>
+
+                    @error('city')
+                        <p class="field__error" data-pickup-error>{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div
+                    class="alert"
+                    data-delivery-note
+                    @unless(in_array($editFulfilmentMethod, ['delivery', 'both'], true)) hidden @endunless
+                >
+                    Australia-wide delivery will be shown on the public listing.
                 </div>
             </div>
         </section>
@@ -242,4 +315,46 @@
         </div>
     </aside>
 </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const method = document.querySelector('[data-fulfilment-method]');
+    const pickup = document.querySelector('[data-pickup-location]');
+    const delivery = document.querySelector('[data-delivery-note]');
+    const fulfilmentError = document.querySelector('[data-fulfilment-error]');
+    const pickupError = document.querySelector('[data-pickup-error]');
+    const city = document.querySelector('#city');
+
+    if (!method || !pickup || !delivery) {
+        return;
+    }
+
+    const refreshFulfilment = () => {
+        const value = method.value;
+
+        pickup.hidden = value === 'delivery';
+        delivery.hidden = !['delivery', 'both'].includes(value);
+
+        if (value !== '' && fulfilmentError) {
+            fulfilmentError.hidden = true;
+        }
+
+        if (value === 'delivery' && pickupError) {
+            pickupError.hidden = true;
+        }
+    };
+
+    method.addEventListener('change', refreshFulfilment);
+
+    if (city) {
+        city.addEventListener('input', () => {
+            if (city.value.trim() !== '' && pickupError) {
+                pickupError.hidden = true;
+            }
+        });
+    }
+
+    refreshFulfilment();
+});
+</script>
 @endsection

@@ -11,6 +11,27 @@
     $city = trim((string) $listing->getAttribute('city'));
     $country = trim((string) $listing->getAttribute('country'));
     $place = collect([$city, $country])->filter()->implode(', ');
+
+    $fulfilmentMethod = trim(
+        (string) $listing->getAttribute('fulfilment_method')
+    );
+
+    $deliveryScope = trim(
+        (string) $listing->getAttribute('delivery_scope')
+    );
+
+    $hasPickup = in_array(
+        $fulfilmentMethod,
+        ['pickup', 'both'],
+        true
+    );
+
+    $hasDelivery =
+        in_array($fulfilmentMethod, ['delivery', 'both'], true)
+        && $deliveryScope === 'australia_wide';
+
+    $isLegacyFulfilment = $fulfilmentMethod === '';
+
     $createdAt = $listing->getAttribute('created_at');
     $isSold = $listing->statusValue() === 'sold';
     $canContact = $viewer !== null && ! $isOwner && $sellerId !== null && ! $isSold;
@@ -81,8 +102,15 @@
                             <p class="text-price text-price--large">{{ $listing->panelPriceLabel() }}</p>
                             <h1 class="title-page">{{ $listing->getAttribute('title') }}</h1>
                             <div class="row row--wrap text-meta">
-                                @if($place !== '')
-                                    <span class="row" style="gap:var(--space-1)"><x-ui.icon name="map-pin" style="width:14px;height:14px"/>{{ $place }}</span>
+                                @if(($hasPickup || $isLegacyFulfilment) && $place !== '')
+                                    <span class="row" style="gap:var(--space-1)">
+                                        <x-ui.icon name="map-pin" style="width:14px;height:14px"/>
+                                        {{ $place }}
+                                    </span>
+                                @endif
+
+                                @if($hasDelivery)
+                                    <span class="badge">Australia-wide delivery</span>
                                 @endif
                                 @if($createdAt)
                                     <span class="row" style="gap:var(--space-1)"><x-ui.icon name="clock" style="width:14px;height:14px"/><time datetime="{{ $createdAt->toIso8601String() }}">{{ $createdAt->diffForHumans() }}</time></span>
@@ -126,6 +154,28 @@
                             <div class="stack stack--tight">
                                 <h2 class="card__title">{{ __('site::messages.description') }}</h2>
                                 <div class="prose">{!! nl2br(e($listing->getAttribute('description'))) !!}</div>
+                            </div>
+                        @endif
+
+                        @if($hasPickup || $hasDelivery)
+                            <div class="stack stack--tight">
+                                <h2 class="card__title">Pickup &amp; delivery</h2>
+
+                                <dl class="spec-list">
+                                    @if($hasPickup && $place !== '')
+                                        <div class="spec-list__row">
+                                            <dt class="spec-list__label">Pickup</dt>
+                                            <dd class="spec-list__value">{{ $place }}</dd>
+                                        </div>
+                                    @endif
+
+                                    @if($hasDelivery)
+                                        <div class="spec-list__row">
+                                            <dt class="spec-list__label">Delivery</dt>
+                                            <dd class="spec-list__value">Australia-wide</dd>
+                                        </div>
+                                    @endif
+                                </dl>
                             </div>
                         @endif
 

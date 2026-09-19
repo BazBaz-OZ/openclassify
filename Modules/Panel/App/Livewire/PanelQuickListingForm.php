@@ -86,6 +86,8 @@ class PanelQuickListingForm extends Component
 
     public int $quantity = 1;
 
+    public string $fulfilmentMethod = '';
+
     public string $width = '';
 
     public string $height = '';
@@ -194,6 +196,18 @@ class PanelQuickListingForm extends Component
     {
         $this->selectedCityId = null;
         $this->selectedDistrictId = null;
+    }
+
+    public function updatedFulfilmentMethod(): void
+    {
+        $this->resetValidation('fulfilmentMethod');
+
+        if ($this->fulfilmentMethod === 'delivery') {
+            $this->resetValidation([
+                'selectedCityId',
+                'selectedDistrictId',
+            ]);
+        }
     }
 
     public function updatedSelectedDistrictId(): void
@@ -989,6 +1003,10 @@ class PanelQuickListingForm extends Component
                 ? ['nullable', 'numeric', 'min:0']
                 : ['required', 'numeric', 'min:0.01'],
             'quantity' => ['required', 'integer', 'min:1', 'max:1000000'],
+            'fulfilmentMethod' => [
+                'required',
+                Rule::in(['pickup', 'delivery', 'both']),
+            ],
             'width' => ['nullable', 'numeric', 'min:0.01', 'max:999999.99'],
             'height' => ['nullable', 'numeric', 'min:0.01', 'max:999999.99'],
             'depth' => ['nullable', 'numeric', 'min:0.01', 'max:999999.99'],
@@ -998,6 +1016,13 @@ class PanelQuickListingForm extends Component
             'description' => ['required', 'string', 'max:1450'],
             'selectedCountryId' => ['required', 'integer', Rule::in(collect($this->countries)->pluck('id')->all())],
             'selectedDistrictId' => [
+                Rule::requiredIf(
+                    fn (): bool => in_array(
+                        $this->fulfilmentMethod,
+                        ['pickup', 'both'],
+                        true
+                    )
+                ),
                 'nullable',
                 'integer',
                 Rule::in(collect($this->districts)->pluck('id')->all()),
@@ -1010,6 +1035,9 @@ class PanelQuickListingForm extends Component
             'quantity.required' => 'Quantity is required.',
             'quantity.integer' => 'Quantity must be a whole number.',
             'quantity.min' => 'Quantity must be at least 1.',
+            'fulfilmentMethod.required' => 'Please choose how the buyer will receive the item.',
+            'fulfilmentMethod.in' => 'Please choose a valid pickup or delivery option.',
+            'selectedDistrictId.required' => 'Please choose a suburb / area for pickup.',
             'description.required' => 'A description is required.',
             'description.max' => 'The description may not exceed 1450 characters.',
             'selectedCountryId.required' => 'Please choose a country.',
@@ -1077,6 +1105,12 @@ class PanelQuickListingForm extends Component
             'price' => $this->isFreeStuff ? 0.0 : (float) $this->price,
             'quantity_total' => $this->quantity,
             'quantity_available' => $this->quantity,
+            'fulfilment_method' => $this->fulfilmentMethod,
+            'delivery_scope' => in_array(
+                $this->fulfilmentMethod,
+                ['delivery', 'both'],
+                true
+            ) ? 'australia_wide' : null,
             'width' => filled($this->width) ? (float) $this->width : null,
             'height' => filled($this->height) ? (float) $this->height : null,
             'depth' => filled($this->depth) ? (float) $this->depth : null,
@@ -1094,7 +1128,11 @@ class PanelQuickListingForm extends Component
             'contact_email' => (string) $user->email,
             'contact_phone' => Profile::phoneForUser($user),
             'country' => $this->selectedCountryName,
-            'city' => $this->selectedDistrictName,
+            'city' => in_array(
+                $this->fulfilmentMethod,
+                ['pickup', 'both'],
+                true
+            ) ? $this->selectedDistrictName : null,
         ];
 
         $listing = Listing::query()
@@ -1354,6 +1392,7 @@ class PanelQuickListingForm extends Component
             'listingTitle',
             'price',
             'quantity',
+            'fulfilmentMethod',
             'width',
             'height',
             'depth',
@@ -1409,6 +1448,7 @@ class PanelQuickListingForm extends Component
         $this->listingTitle = (string) ($draft['listingTitle'] ?? '');
         $this->price = (string) ($draft['price'] ?? '');
         $this->quantity = max(1, (int) ($draft['quantity'] ?? 1));
+        $this->fulfilmentMethod = (string) ($draft['fulfilmentMethod'] ?? '');
         $this->width = (string) ($draft['width'] ?? '');
         $this->height = (string) ($draft['height'] ?? '');
         $this->depth = (string) ($draft['depth'] ?? '');
@@ -1439,6 +1479,7 @@ class PanelQuickListingForm extends Component
             'listingTitle' => $this->listingTitle,
             'price' => $this->price,
             'quantity' => $this->quantity,
+            'fulfilmentMethod' => $this->fulfilmentMethod,
             'width' => $this->width,
             'height' => $this->height,
             'depth' => $this->depth,

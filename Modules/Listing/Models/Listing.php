@@ -50,6 +50,7 @@ class Listing extends Model implements HasMedia
         'quantity_total', 'quantity_available',
         'width', 'height', 'depth', 'dimension_unit',
         'weight', 'weight_unit',
+        'fulfilment_method', 'delivery_scope',
         'clear_out_id',
         'creation_token',
     ];
@@ -778,6 +779,8 @@ class Listing extends Model implements HasMedia
             'dimension_unit',
             'weight',
             'weight_unit',
+            'fulfilment_method',
+            'delivery_scope',
         ]);
 
         if (array_key_exists('quantity_total', $attributes)) {
@@ -903,6 +906,8 @@ class Listing extends Model implements HasMedia
             'dimension_unit',
             'weight',
             'weight_unit',
+            'fulfilment_method',
+            'delivery_scope',
         ]);
 
         $payload['currency'] = ListingPanelHelper::normalizeCurrency($data['currency'] ?? null);
