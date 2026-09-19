@@ -129,6 +129,75 @@
                             </div>
                         @endif
 
+                        @php
+                            $width = $listing->getAttribute('width');
+                            $height = $listing->getAttribute('height');
+                            $depth = $listing->getAttribute('depth');
+                            $dimensionUnit = trim(
+                                (string) $listing->getAttribute('dimension_unit')
+                            ) ?: 'cm';
+
+                            $hasWidth = filled($width);
+                            $hasHeight = filled($height);
+                            $hasDepth = filled($depth);
+                            $hasAllDimensions =
+                                $hasWidth && $hasHeight && $hasDepth;
+
+                            $weight = $listing->getAttribute('weight');
+                            $weightUnit = trim(
+                                (string) $listing->getAttribute('weight_unit')
+                            ) ?: 'kg';
+                            $hasWeight = filled($weight);
+                        @endphp
+
+                        @if($hasWidth || $hasHeight || $hasDepth || $hasWeight)
+                            <div class="stack stack--tight">
+                                <h2 class="card__title">Size &amp; weight</h2>
+
+                                <dl class="spec-list">
+                                    @if($hasAllDimensions)
+                                        <div class="spec-list__row">
+                                            <dt class="spec-list__label">Dimensions</dt>
+                                            <dd class="spec-list__value">
+                                                {{ (float) $width }}
+                                                × {{ (float) $height }}
+                                                × {{ (float) $depth }}
+                                                {{ $dimensionUnit }}
+                                            </dd>
+                                        </div>
+                                    @else
+                                        @if($hasWidth)
+                                            <div class="spec-list__row">
+                                                <dt class="spec-list__label">Width</dt>
+                                                <dd class="spec-list__value">{{ (float) $width }} {{ $dimensionUnit }}</dd>
+                                            </div>
+                                        @endif
+
+                                        @if($hasHeight)
+                                            <div class="spec-list__row">
+                                                <dt class="spec-list__label">Height</dt>
+                                                <dd class="spec-list__value">{{ (float) $height }} {{ $dimensionUnit }}</dd>
+                                            </div>
+                                        @endif
+
+                                        @if($hasDepth)
+                                            <div class="spec-list__row">
+                                                <dt class="spec-list__label">Depth</dt>
+                                                <dd class="spec-list__value">{{ (float) $depth }} {{ $dimensionUnit }}</dd>
+                                            </div>
+                                        @endif
+                                    @endif
+
+                                    @if($hasWeight)
+                                        <div class="spec-list__row">
+                                            <dt class="spec-list__label">Weight</dt>
+                                            <dd class="spec-list__value">{{ (float) $weight }} {{ $weightUnit }}</dd>
+                                        </div>
+                                    @endif
+                                </dl>
+                            </div>
+                        @endif
+
                         @if(! empty($presentableCustomFields))
                             <div class="stack stack--tight">
                                 <h2 class="card__title">{{ __('site::messages.details') }}</h2>

@@ -77,6 +77,112 @@
                     </p>
                     @error('quantity_total')<p class="field__error">{{ $message }}</p>@enderror
                 </div>
+
+                <div class="field-set">
+                    <p class="field-set__legend">
+                        Size &amp; weight
+                        <span class="text-muted">(optional)</span>
+                    </p>
+
+                    <div class="field__row field__row--three">
+                        <div class="field">
+                            <label class="field__label" for="width">Width</label>
+                            <input
+                                id="width"
+                                type="number"
+                                inputmode="decimal"
+                                step="0.01"
+                                min="0.01"
+                                name="width"
+                                value="{{ old('width', $listing->getAttribute('width')) }}"
+                                class="input"
+                            >
+                            @error('width')<p class="field__error">{{ $message }}</p>@enderror
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label" for="height">Height</label>
+                            <input
+                                id="height"
+                                type="number"
+                                inputmode="decimal"
+                                step="0.01"
+                                min="0.01"
+                                name="height"
+                                value="{{ old('height', $listing->getAttribute('height')) }}"
+                                class="input"
+                            >
+                            @error('height')<p class="field__error">{{ $message }}</p>@enderror
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label" for="depth">Depth</label>
+                            <input
+                                id="depth"
+                                type="number"
+                                inputmode="decimal"
+                                step="0.01"
+                                min="0.01"
+                                name="depth"
+                                value="{{ old('depth', $listing->getAttribute('depth')) }}"
+                                class="input"
+                            >
+                            @error('depth')<p class="field__error">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
+
+                    <div class="field__row field__row--three">
+                        <div class="field">
+                            <label class="field__label" for="dimension_unit">Dimension unit</label>
+                            @php
+                                $dimensionUnit = old(
+                                    'dimension_unit',
+                                    $listing->getAttribute('dimension_unit') ?: 'cm'
+                                );
+                            @endphp
+                            <select id="dimension_unit" name="dimension_unit" class="select">
+                                <option value="mm" @selected($dimensionUnit === 'mm')>mm</option>
+                                <option value="cm" @selected($dimensionUnit === 'cm')>cm</option>
+                                <option value="m" @selected($dimensionUnit === 'm')>m</option>
+                            </select>
+                            @error('dimension_unit')<p class="field__error">{{ $message }}</p>@enderror
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label" for="weight">Weight</label>
+                            <input
+                                id="weight"
+                                type="number"
+                                inputmode="decimal"
+                                step="0.1"
+                                min="0.1"
+                                name="weight"
+                                value="{{ old('weight', filled($listing->getAttribute('weight')) ? (float) $listing->getAttribute('weight') : '') }}"
+                                class="input"
+                            >
+                            @error('weight')<p class="field__error">{{ $message }}</p>@enderror
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label" for="weight_unit">Weight unit</label>
+                            @php
+                                $weightUnit = old(
+                                    'weight_unit',
+                                    $listing->getAttribute('weight_unit') ?: 'kg'
+                                );
+                            @endphp
+                            <select id="weight_unit" name="weight_unit" class="select">
+                                <option value="g" @selected($weightUnit === 'g')>g</option>
+                                <option value="kg" @selected($weightUnit === 'kg')>kg</option>
+                            </select>
+                            @error('weight_unit')<p class="field__error">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
+
+                    <p class="field__hint">
+                        Useful for furniture, artwork, mirrors, appliances and other bulky items.
+                    </p>
+                </div>
             </div>
         </section>
 

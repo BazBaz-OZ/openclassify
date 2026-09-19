@@ -26,6 +26,7 @@ class QuickListingCategorySuggester
                 'category_id' => null,
                 'confidence' => null,
                 'reason' => 'AI provider key is missing.',
+                'suggested_title' => null,
                 'alternatives' => [],
                 'error' => 'AI provider key is missing.',
             ];
@@ -39,6 +40,7 @@ class QuickListingCategorySuggester
                 'category_id' => null,
                 'confidence' => null,
                 'reason' => 'No active categories available.',
+                'suggested_title' => null,
                 'alternatives' => [],
                 'error' => 'No active categories available.',
             ];
@@ -90,6 +92,7 @@ class QuickListingCategorySuggester
                     'category_id' => $schema->integer()->enum($categoryIds)->nullable(),
                     'confidence' => $schema->number()->min(0)->max(1)->nullable(),
                     'reason' => $schema->string()->required(),
+                    'suggested_title' => $schema->string()->required(),
                     'alternatives' => $schema->array()->items(
                         $schema->integer()->enum($categoryIds)
                     )->max(3)->default([]),
@@ -113,6 +116,12 @@ class QuickListingCategorySuggester
                       such as branded characters, franchise items, models or limited editions.
                     - Do not infer age, rarity, provenance or collectable status from appearance
                       alone.
+                    - Always provide suggested_title when a recognisable item is visible:
+                      a concise marketplace listing title describing the visible item in plain language.
+                    - Keep suggested_title to 70 characters or fewer.
+                    - Do not invent a brand, model, material, age, condition or authenticity
+                      unless it is clearly visible in the image.
+                    - Do not include price, location or promotional language in suggested_title.
                     - Confidence must be between 0 and 1.
                     PROMPT,
                 attachments: [$image],
@@ -143,6 +152,13 @@ class QuickListingCategorySuggester
                 'category_id' => $detected ? $categoryId : null,
                 'confidence' => $confidence,
                 'reason' => (string) ($response['reason'] ?? 'No reason provided.'),
+                'suggested_title' => (
+                    ($title = mb_substr(
+                        trim((string) ($response['suggested_title'] ?? '')),
+                        0,
+                        70
+                    )) !== ''
+                ) ? $title : null,
                 'alternatives' => $alternatives,
                 'error' => null,
             ];
@@ -154,6 +170,7 @@ class QuickListingCategorySuggester
                 'category_id' => null,
                 'confidence' => null,
                 'reason' => 'Category could not be detected automatically.',
+                'suggested_title' => null,
                 'alternatives' => [],
                 'error' => $exception->getMessage(),
             ];

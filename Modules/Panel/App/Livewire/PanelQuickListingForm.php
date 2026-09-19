@@ -86,6 +86,18 @@ class PanelQuickListingForm extends Component
 
     public int $quantity = 1;
 
+    public string $width = '';
+
+    public string $height = '';
+
+    public string $depth = '';
+
+    public string $dimensionUnit = 'cm';
+
+    public string $weight = '';
+
+    public string $weightUnit = 'kg';
+
     public string $description = '';
 
     public ?int $selectedCountryId = null;
@@ -426,6 +438,21 @@ class PanelQuickListingForm extends Component
 
             $this->detectedAlternatives =
                 $result['alternatives'];
+
+            /*
+             * The same AI scan can also prepare a concise listing title.
+             * Never overwrite a title the seller has already entered.
+             */
+            if (blank($this->listingTitle)) {
+                $suggestedTitle = trim(
+                    (string) ($result['suggested_title'] ?? '')
+                );
+
+                if ($suggestedTitle !== '') {
+                    $this->listingTitle =
+                        mb_substr($suggestedTitle, 0, 70);
+                }
+            }
 
             if (blank($result['error'] ?? null)) {
                 \Log::info(
@@ -962,6 +989,12 @@ class PanelQuickListingForm extends Component
                 ? ['nullable', 'numeric', 'min:0']
                 : ['required', 'numeric', 'min:0.01'],
             'quantity' => ['required', 'integer', 'min:1', 'max:1000000'],
+            'width' => ['nullable', 'numeric', 'min:0.01', 'max:999999.99'],
+            'height' => ['nullable', 'numeric', 'min:0.01', 'max:999999.99'],
+            'depth' => ['nullable', 'numeric', 'min:0.01', 'max:999999.99'],
+            'dimensionUnit' => ['required', Rule::in(['mm', 'cm', 'm'])],
+            'weight' => ['nullable', 'numeric', 'decimal:0,1', 'min:0.1', 'max:999999.9'],
+            'weightUnit' => ['required', Rule::in(['g', 'kg'])],
             'description' => ['required', 'string', 'max:1450'],
             'selectedCountryId' => ['required', 'integer', Rule::in(collect($this->countries)->pluck('id')->all())],
             'selectedDistrictId' => [
@@ -1044,6 +1077,16 @@ class PanelQuickListingForm extends Component
             'price' => $this->isFreeStuff ? 0.0 : (float) $this->price,
             'quantity_total' => $this->quantity,
             'quantity_available' => $this->quantity,
+            'width' => filled($this->width) ? (float) $this->width : null,
+            'height' => filled($this->height) ? (float) $this->height : null,
+            'depth' => filled($this->depth) ? (float) $this->depth : null,
+            'dimension_unit' => (
+                filled($this->width)
+                || filled($this->height)
+                || filled($this->depth)
+            ) ? $this->dimensionUnit : null,
+            'weight' => filled($this->weight) ? (float) $this->weight : null,
+            'weight_unit' => filled($this->weight) ? $this->weightUnit : null,
             'currency' => ListingPanelHelper::defaultCurrency(),
             'category_id' => $this->selectedCategoryId,
             'status' => 'active',
@@ -1311,6 +1354,12 @@ class PanelQuickListingForm extends Component
             'listingTitle',
             'price',
             'quantity',
+            'width',
+            'height',
+            'depth',
+            'dimensionUnit',
+            'weight',
+            'weightUnit',
             'description',
             'selectedCountryId',
             'selectedDistrictId',
@@ -1360,6 +1409,12 @@ class PanelQuickListingForm extends Component
         $this->listingTitle = (string) ($draft['listingTitle'] ?? '');
         $this->price = (string) ($draft['price'] ?? '');
         $this->quantity = max(1, (int) ($draft['quantity'] ?? 1));
+        $this->width = (string) ($draft['width'] ?? '');
+        $this->height = (string) ($draft['height'] ?? '');
+        $this->depth = (string) ($draft['depth'] ?? '');
+        $this->dimensionUnit = (string) ($draft['dimensionUnit'] ?? 'cm');
+        $this->weight = (string) ($draft['weight'] ?? '');
+        $this->weightUnit = (string) ($draft['weightUnit'] ?? 'kg');
         $this->description = (string) ($draft['description'] ?? '');
         $this->selectedDistrictId = isset($draft['selectedDistrictId']) ? (int) $draft['selectedDistrictId'] : null;
         $this->customFieldValues = is_array($draft['customFieldValues'] ?? null) ? $draft['customFieldValues'] : [];
@@ -1384,6 +1439,12 @@ class PanelQuickListingForm extends Component
             'listingTitle' => $this->listingTitle,
             'price' => $this->price,
             'quantity' => $this->quantity,
+            'width' => $this->width,
+            'height' => $this->height,
+            'depth' => $this->depth,
+            'dimensionUnit' => $this->dimensionUnit,
+            'weight' => $this->weight,
+            'weightUnit' => $this->weightUnit,
             'description' => $this->description,
             'selectedDistrictId' => $this->selectedDistrictId,
             'customFieldValues' => $this->customFieldValues,

@@ -370,6 +370,105 @@
                             @error('quantity')<p class="field__error">{{ $message }}</p>@enderror
                         </div>
 
+                        <div class="field-set">
+                            <p class="field-set__legend">Size &amp; weight <span class="text-muted">(optional)</span></p>
+
+                            <div class="field__row field__row--three">
+                                <div class="field">
+                                    <label class="field__label" for="listing-width">Width</label>
+                                    <input
+                                        id="listing-width"
+                                        type="number"
+                                        inputmode="decimal"
+                                        step="0.01"
+                                        min="0.01"
+                                        class="input"
+                                        wire:model.blur="width"
+                                        placeholder="e.g. 85"
+                                    >
+                                    @error('width')<p class="field__error">{{ $message }}</p>@enderror
+                                </div>
+
+                                <div class="field">
+                                    <label class="field__label" for="listing-height">Height</label>
+                                    <input
+                                        id="listing-height"
+                                        type="number"
+                                        inputmode="decimal"
+                                        step="0.01"
+                                        min="0.01"
+                                        class="input"
+                                        wire:model.blur="height"
+                                        placeholder="e.g. 120"
+                                    >
+                                    @error('height')<p class="field__error">{{ $message }}</p>@enderror
+                                </div>
+
+                                <div class="field">
+                                    <label class="field__label" for="listing-depth">Depth</label>
+                                    <input
+                                        id="listing-depth"
+                                        type="number"
+                                        inputmode="decimal"
+                                        step="0.01"
+                                        min="0.01"
+                                        class="input"
+                                        wire:model.blur="depth"
+                                        placeholder="e.g. 4"
+                                    >
+                                    @error('depth')<p class="field__error">{{ $message }}</p>@enderror
+                                </div>
+                            </div>
+
+                            <div class="field__row field__row--three">
+                                <div class="field">
+                                    <label class="field__label" for="listing-dimension-unit">Dimension unit</label>
+                                    <select
+                                        id="listing-dimension-unit"
+                                        class="select"
+                                        wire:model="dimensionUnit"
+                                    >
+                                        <option value="mm">mm</option>
+                                        <option value="cm">cm</option>
+                                        <option value="m">m</option>
+                                    </select>
+                                    @error('dimensionUnit')<p class="field__error">{{ $message }}</p>@enderror
+                                </div>
+
+                                <div class="field">
+                                    <label class="field__label" for="listing-weight">Weight</label>
+                                    <input
+                                        id="listing-weight"
+                                        type="number"
+                                        inputmode="decimal"
+                                        step="0.1"
+                                        min="0.1"
+                                        class="input"
+                                        wire:model.blur="weight"
+                                        placeholder="e.g. 6.5"
+                                    >
+                                    @error('weight')<p class="field__error">{{ $message }}</p>@enderror
+                                </div>
+
+                                <div class="field">
+                                    <label class="field__label" for="listing-weight-unit">Weight unit</label>
+                                    <select
+                                        id="listing-weight-unit"
+                                        class="select"
+                                        wire:model="weightUnit"
+                                    >
+                                        <option value="g">g</option>
+                                        <option value="kg">kg</option>
+                                    </select>
+                                    @error('weightUnit')<p class="field__error">{{ $message }}</p>@enderror
+                                </div>
+                            </div>
+
+                            <p class="field__hint">
+                                Useful for furniture, artwork, mirrors, appliances and other bulky items.
+                            </p>
+                        </div>
+
                         @if($listingCustomFields !== [])
                             <div class="field-set">
                                 <p class="field-set__legend">{{ __('site::messages.details') }}</p>

@@ -48,6 +48,8 @@ class Listing extends Model implements HasMedia
         'contact_phone', 'contact_email', 'expires_at',
         'city', 'country', 'latitude', 'longitude', 'location', 'view_count',
         'quantity_total', 'quantity_available',
+        'width', 'height', 'depth', 'dimension_unit',
+        'weight', 'weight_unit',
         'clear_out_id',
         'creation_token',
     ];
@@ -59,6 +61,10 @@ class Listing extends Model implements HasMedia
         'view_count' => 'integer',
         'quantity_total' => 'integer',
         'quantity_available' => 'integer',
+        'width' => 'decimal:2',
+        'height' => 'decimal:2',
+        'depth' => 'decimal:2',
+        'weight' => 'decimal:3',
         'expires_at' => 'datetime',
         'price' => 'decimal:2',
         'latitude' => 'decimal:7',
@@ -766,6 +772,12 @@ class Listing extends Model implements HasMedia
             'country',
             'city',
             'expires_at',
+            'width',
+            'height',
+            'depth',
+            'dimension_unit',
+            'weight',
+            'weight_unit',
         ]);
 
         if (array_key_exists('quantity_total', $attributes)) {
@@ -885,6 +897,12 @@ class Listing extends Model implements HasMedia
             'expires_at',
             'quantity_total',
             'quantity_available',
+            'width',
+            'height',
+            'depth',
+            'dimension_unit',
+            'weight',
+            'weight_unit',
         ]);
 
         $payload['currency'] = ListingPanelHelper::normalizeCurrency($data['currency'] ?? null);
