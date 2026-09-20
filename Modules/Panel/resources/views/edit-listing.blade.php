@@ -37,6 +37,42 @@
                     @error('description')<p class="field__error">{{ $message }}</p>@enderror
                 </div>
 
+                <div class="field">
+                    <label class="field__label" for="category_id">Category</label>
+
+                    <select
+                        id="category_id"
+                        name="category_id"
+                        class="select"
+                        required
+                        aria-invalid="{{ $errors->has('category_id') ? 'true' : 'false' }}"
+                    >
+                        <option value="">Select category</option>
+
+                        @foreach($categoryOptions as $category)
+                            <option
+                                value="{{ $category['id'] }}"
+                                @selected(
+                                    (string) old(
+                                        'category_id',
+                                        $listing->getAttribute('category_id')
+                                    ) === (string) $category['id']
+                                )
+                            >
+                                {{ $category['label'] }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    <p class="field__hint">
+                        Change this if the automatically selected category is incorrect.
+                    </p>
+
+                    @error('category_id')
+                        <p class="field__error">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <div class="field__row field__row--two">
                     <div class="field">
                         <label class="field__label" for="price">{{ __('panel::messages.price') }}</label>

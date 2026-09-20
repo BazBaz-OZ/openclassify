@@ -767,6 +767,7 @@ class Listing extends Model implements HasMedia
             'title',
             'description',
             'price',
+            'category_id',
             'status',
             'contact_phone',
             'contact_email',
@@ -782,6 +783,17 @@ class Listing extends Model implements HasMedia
             'fulfilment_method',
             'delivery_scope',
         ]);
+
+        /*
+         * Category-specific values from the previous category must not
+         * remain attached when the seller changes category.
+         */
+        if (
+            array_key_exists('category_id', $attributes)
+            && (int) $attributes['category_id'] !== (int) $this->category_id
+        ) {
+            $payload['custom_fields'] = [];
+        }
 
         if (array_key_exists('quantity_total', $attributes)) {
             $oldTotal = max(1, (int) $this->quantity_total);

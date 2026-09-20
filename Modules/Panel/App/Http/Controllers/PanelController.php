@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Modules\Category\Models\Category;
 use Modules\Listing\Models\Listing;
 use Modules\Listing\Support\ListingCustomFieldSchemaBuilder;
 use Modules\Listing\Support\ListingPanelHelper;
@@ -70,6 +71,30 @@ class PanelController extends Controller
     {
         $listing->assertOwnedBy($request->user());
 
+        $categoryCatalog = collect(Category::panelQuickCatalog());
+        $categoryById = $categoryCatalog->keyBy('id');
+
+        $categoryOptions = $categoryCatalog
+            ->reject(
+                fn (array $category): bool =>
+                    (bool) ($category['has_children'] ?? false)
+            )
+            ->map(function (array $category) use ($categoryById): array {
+                $parent = ! empty($category['parent_id'])
+                    ? $categoryById->get((int) $category['parent_id'])
+                    : null;
+
+                return [
+                    'id' => (int) $category['id'],
+                    'label' => is_array($parent)
+                        ? $parent['name'].' — '.$category['name']
+                        : $category['name'],
+                ];
+            })
+            ->sortBy('label')
+            ->values()
+            ->all();
+
         return view('panel::edit-listing', [
             'listing' => $listing->loadPanelEditor(),
             'customFieldValues' => ListingCustomFieldSchemaBuilder::presentableValues(
@@ -77,6 +102,7 @@ class PanelController extends Controller
                 (array) $listing->custom_fields,
             ),
             'statusOptions' => Listing::panelStatusOptions(),
+            'categoryOptions' => $categoryOptions,
         ]);
     }
 

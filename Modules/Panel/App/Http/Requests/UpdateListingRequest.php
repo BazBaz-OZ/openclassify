@@ -6,6 +6,7 @@ namespace Modules\Panel\App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Modules\Category\Models\Category;
 use Modules\Listing\Models\Listing;
 
 class UpdateListingRequest extends FormRequest
@@ -37,6 +38,19 @@ class UpdateListingRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
+            'category_id' => [
+                'required',
+                'integer',
+                Rule::in(
+                    collect(Category::panelQuickCatalog())
+                        ->reject(
+                            fn (array $category): bool =>
+                                (bool) ($category['has_children'] ?? false)
+                        )
+                        ->pluck('id')
+                        ->all()
+                ),
+            ],
             'price' => ['nullable', 'numeric', 'min:0'],
             'quantity_total' => ['required', 'integer', 'min:1', 'max:1000000'],
             'fulfilment_method' => [
@@ -77,6 +91,8 @@ class UpdateListingRequest extends FormRequest
     {
         return [
             'title.required' => 'Listing title is required.',
+            'category_id.required' => 'Please choose a category.',
+            'category_id.in' => 'Please choose a valid category.',
             'price.numeric' => 'Listing price must be numeric.',
             'quantity_total.required' => 'Quantity is required.',
             'quantity_total.integer' => 'Quantity must be a whole number.',
