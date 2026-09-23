@@ -285,7 +285,7 @@
                         <div class="card__body">
                             @foreach($listingVideos as $video)
                                 <video controls preload="none" style="width:100%;border-radius:var(--radius-md)">
-                                    <source src="{{ $video->playbackUrl() }}">
+                                    <source src="{{ $video->playableUrl() }}">
                                 </video>
                             @endforeach
                         </div>
