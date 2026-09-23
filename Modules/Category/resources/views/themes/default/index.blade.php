@@ -6,13 +6,52 @@
 @section('content')
 <div class="shell shell--wide page">
     <div class="stack stack--section">
-        <div class="stack stack--tight">
-            <nav class="breadcrumb" aria-label="Breadcrumb">
-                <a href="{{ route('home') }}">{{ __('site::messages.home') }}</a>
-                <span class="breadcrumb__separator">/</span>
-                <span>{{ __('site::messages.categories') }}</span>
-            </nav>
-            <h1 class="title-page">{{ __('site::messages.all_categories') }}</h1>
+        <div class="category-page__intro">
+            <div class="stack stack--tight">
+                <nav class="breadcrumb" aria-label="Breadcrumb">
+                    <a href="{{ route('home') }}">{{ __('site::messages.home') }}</a>
+                    <span class="breadcrumb__separator">/</span>
+                    <span>{{ __('site::messages.categories') }}</span>
+                </nav>
+                <h1 class="title-page">{{ __('site::messages.all_categories') }}</h1>
+            </div>
+
+            <aside
+                class="ad-slot"
+                aria-label="Advertisement"
+            >
+                <div class="ad-slot__inner">
+                <div class="ad-slot__frame ad-slot__frame--pcez">
+                    <img
+                        src="{{ asset('images/ads/pcez-logo.png') }}"
+                        alt="PCEZ Computers"
+                        class="ad-slot__pcez-logo"
+                    >
+
+                    <span class="ad-slot__pcez-copy">
+                        IT Support • Repairs • Business Technology
+                    </span>
+
+                    <span class="ad-slot__pcez-actions">
+                        <a
+                            href="https://pcez.com.au"
+                            target="_blank"
+                            rel="noopener sponsored"
+                            class="ad-slot__pcez-cta"
+                        >
+                            Visit PCEZ
+                        </a>
+
+                        <a
+                            href="mailto:support@sellmyjunk.com.au?subject=Advertising%20with%20SellMyJunk"
+                            class="ad-slot__advertise-link"
+                        >
+                            Advertise with us
+                        </a>
+                    </span>
+                </div>
+                </div>
+            </aside>
         </div>
 
         @forelse($categories as $category)

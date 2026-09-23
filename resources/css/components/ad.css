@@ -1,0 +1,117 @@
+.ad-slot {
+    width: 100%;
+}
+
+.ad-slot__inner {
+    width: 100%;
+    max-width: 970px;
+    margin-inline: auto;
+}
+
+.ad-slot__frame {
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-3);
+    border: 1px dashed var(--line-hairline);
+    border-radius: var(--radius-md);
+    background: var(--ink-50);
+    color: var(--ink-400);
+    font-size: var(--text-sm);
+    text-align: center;
+}
+
+@media (min-width: 64rem) {
+    .ad-slot__frame {
+        min-height: 90px;
+    }
+}
+
+
+.ad-slot__frame--pcez {
+    justify-content: space-between;
+    gap: var(--space-4);
+    background: white;
+    border-style: solid;
+}
+
+.ad-slot__pcez-logo {
+    display: block;
+    width: 150px;
+    height: auto;
+    flex: 0 0 auto;
+}
+
+.ad-slot__pcez-copy {
+    flex: 1 1 auto;
+    color: var(--ink-600);
+    font-size: var(--text-sm);
+    text-align: left;
+}
+
+.ad-slot__pcez-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    flex: 0 0 auto;
+}
+
+.ad-slot__pcez-cta {
+    padding: var(--space-2) var(--space-4);
+    border-radius: 999px;
+    background: var(--ink-900);
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.ad-slot__advertise-link {
+    color: var(--ink-500);
+    font-size: var(--text-xs);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    white-space: nowrap;
+}
+
+@media (max-width: 40rem) {
+    .ad-slot__frame--pcez {
+        flex-wrap: wrap;
+    }
+
+    .ad-slot__pcez-logo {
+        width: 130px;
+    }
+
+    .ad-slot__pcez-copy {
+        min-width: 180px;
+    }
+
+    .ad-slot__pcez-actions {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+}
+
+.category-page__intro {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (min-width: 64rem) {
+    .category-page__intro {
+        grid-template-columns: minmax(0, 1fr) minmax(520px, 760px);
+        align-items: center;
+    }
+
+    .category-page__intro .ad-slot__inner {
+        max-width: 760px;
+    }
+
+    .category-page__intro .ad-slot__frame {
+        min-height: 80px;
+    }
+}
