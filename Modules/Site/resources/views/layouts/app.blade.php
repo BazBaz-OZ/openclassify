@@ -24,7 +24,9 @@
     $helpPages = \Modules\Page\Models\Page::navigation(\Modules\Page\Models\Page::PLACEMENT_HELP);
     $footerPages = \Modules\Page\Models\Page::navigation(\Modules\Page\Models\Page::PLACEMENT_FOOTER);
     $chromeless = trim((string) $__env->yieldContent('chromeless')) === '1';
-    $sellRoute = $isAuthenticated ? route('panel.listings.create') : route('login');
+    $sellRoute = $isAuthenticated
+        ? route('panel.listings.create', ['new' => 1])
+        : route('login');
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">

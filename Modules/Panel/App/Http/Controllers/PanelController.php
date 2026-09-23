@@ -45,8 +45,19 @@ class PanelController extends Controller
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View|RedirectResponse
     {
+        if ($request->boolean('new')) {
+            $userId = $request->user()->getKey();
+
+            session()->forget([
+                'panel_quick_listing_draft.'.$userId,
+                'panel_quick_listing_publish_token',
+            ]);
+
+            return redirect()->route('panel.listings.create');
+        }
+
         return view('panel::create');
     }
 
