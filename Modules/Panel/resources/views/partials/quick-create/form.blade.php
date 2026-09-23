@@ -38,7 +38,19 @@
             </div>
         @endif
 
+        @error('photos')
+            <div class="alert alert--critical" role="alert"><x-ui.icon name="shield"/><span>{{ $message }}</span></div>
+        @enderror
+
         @error('photos.*')
+            <div class="alert alert--critical" role="alert"><x-ui.icon name="shield"/><span>{{ $message }}</span></div>
+        @enderror
+
+        @error('videos')
+            <div class="alert alert--critical" role="alert"><x-ui.icon name="shield"/><span>{{ $message }}</span></div>
+        @enderror
+
+        @error('videos.*')
             <div class="alert alert--critical" role="alert"><x-ui.icon name="shield"/><span>{{ $message }}</span></div>
         @enderror
 
@@ -580,6 +592,29 @@
                             <div class="upload__grid">
                                 @foreach($photos as $photo)
                                     <figure class="upload__preview"><img src="{{ $photo->temporaryUrl() }}" alt=""></figure>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @if($videos !== [])
+                            <div class="stack stack--tight">
+                                <p class="field-set__legend">
+                                    Videos
+                                </p>
+
+                                @foreach($videos as $video)
+                                    <div class="row row--between">
+                                        <span class="row">
+                                            <x-ui.icon name="video"/>
+                                            <span class="text-body text-clamp-1">
+                                                {{ $video->getClientOriginalName() }}
+                                            </span>
+                                        </span>
+
+                                        <span class="badge badge--positive">
+                                            Attached
+                                        </span>
+                                    </div>
                                 @endforeach
                             </div>
                         @endif

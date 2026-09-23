@@ -947,12 +947,14 @@ class PanelQuickListingForm extends Component
     private function validatePhotos(): void
     {
         $hasGaragePhoto = $this->garagePhotoId !== null;
+        $hasVideo = $this->videos !== [];
+        $mediaAlreadyProvided = $hasGaragePhoto || $hasVideo;
 
         $this->validate([
             'photos' => [
-                $hasGaragePhoto ? 'nullable' : 'required',
+                $mediaAlreadyProvided ? 'nullable' : 'required',
                 'array',
-                $hasGaragePhoto ? 'min:0' : 'min:1',
+                $mediaAlreadyProvided ? 'min:0' : 'min:1',
                 'max:'.config('quick-listing.max_photo_count', 20),
             ],
             'photos.*' => [
@@ -961,6 +963,11 @@ class PanelQuickListingForm extends Component
                 'mimes:jpg,jpeg,png',
                 'max:'.config('quick-listing.max_photo_size_kb', 5120),
             ],
+        ], [
+            'photos.required' =>
+                'Please add at least one photo or video.',
+            'photos.min' =>
+                'Please add at least one photo or video.',
         ]);
     }
 
@@ -976,8 +983,15 @@ class PanelQuickListingForm extends Component
                 'required',
                 'file',
                 'mimetypes:video/mp4,video/quicktime,video/webm,video/x-matroska,video/x-msvideo',
-                'max:'.config('video.max_upload_size_kb', 102400),
+                'max:'.config('video.max_upload_size_kb', 51200),
             ],
+        ], [
+            'videos.max' =>
+                'You can upload up to 5 videos per listing.',
+            'videos.*.mimetypes' =>
+                'Videos must be MP4, MOV, WebM, MKV or AVI.',
+            'videos.*.max' =>
+                'Each video must be 50 MB or smaller.',
         ]);
     }
 
