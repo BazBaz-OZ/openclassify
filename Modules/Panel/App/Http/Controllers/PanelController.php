@@ -12,6 +12,9 @@ use Modules\Category\Models\Category;
 use Modules\Listing\Models\Listing;
 use Modules\Listing\Support\ListingCustomFieldSchemaBuilder;
 use Modules\Listing\Support\ListingPanelHelper;
+use Modules\Location\Models\City;
+use Modules\Location\Models\Country;
+use Modules\Location\Models\District;
 use Modules\Notification\Models\UserNotification;
 use Modules\Offer\Models\Offer;
 use Modules\Panel\App\Http\Requests\StoreVideoRequest;
@@ -186,8 +189,64 @@ class PanelController extends Controller
     {
         $user = $request->user()->loadPanelProfile();
 
+        $australia = collect(Country::quickCreateOptions())->first(
+            fn (array $country): bool =>
+                mb_strtolower(trim((string) $country['name']))
+                    === 'australia'
+        );
+
+        $australiaId = is_array($australia)
+            ? (int) $australia['id']
+            : null;
+
+        $locationCities = collect(City::quickCreateOptions())
+            ->filter(
+                fn (array $city): bool =>
+                    $australiaId !== null
+                    && (int) $city['country_id'] === $australiaId
+            )
+            ->values()
+            ->all();
+
+        $locationCityIds = collect($locationCities)
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+
+        $locationDistricts = collect(District::quickCreateOptions())
+            ->filter(
+                fn (array $district): bool =>
+                    in_array(
+                        (int) $district['city_id'],
+                        $locationCityIds,
+                        true
+                    )
+            )
+            ->values()
+            ->all();
+
+        $profileSuburb = trim(
+            (string) ($user->profile?->city ?? '')
+        );
+
+        $defaultDistrict = $profileSuburb !== ''
+            ? collect($locationDistricts)->first(
+                fn (array $district): bool =>
+                    mb_strtolower(trim((string) $district['name']))
+                        === mb_strtolower($profileSuburb)
+            )
+            : null;
+
         return view('panel::profile', [
             'user' => $user,
+            'locationCities' => $locationCities,
+            'locationDistricts' => $locationDistricts,
+            'defaultLocationCityId' => is_array($defaultDistrict)
+                ? (int) $defaultDistrict['city_id']
+                : null,
+            'defaultLocationDistrictId' => is_array($defaultDistrict)
+                ? (int) $defaultDistrict['id']
+                : null,
         ]);
     }
 

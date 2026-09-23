@@ -53,6 +53,90 @@
                     @error('phone')<p class="field__error">{{ $message }}</p>@enderror
                 </div>
 
+                @php
+                    $selectedDefaultCityId = old(
+                        'location_city_id',
+                        $defaultLocationCityId ?? ''
+                    );
+
+                    $selectedDefaultDistrictId = old(
+                        'location_district_id',
+                        $defaultLocationDistrictId ?? ''
+                    );
+                @endphp
+
+                <div class="field-set">
+                    <p class="field-set__legend">
+                        Default selling location
+                        <span class="text-muted">(optional)</span>
+                    </p>
+
+                    <p class="text-muted">
+                        Used automatically for new Pickup or Pickup + Delivery listings.
+                        You can still change the location for each individual item.
+                    </p>
+
+                    <div class="field__row field__row--two">
+                        <div class="field">
+                            <label
+                                class="field__label"
+                                for="profile-location-city"
+                            >
+                                City
+                            </label>
+
+                            <select
+                                id="profile-location-city"
+                                name="location_city_id"
+                                class="select"
+                            >
+                                <option value="">Select city</option>
+
+                                @foreach($locationCities as $city)
+                                    <option
+                                        value="{{ $city['id'] }}"
+                                        @selected(
+                                            (string) $selectedDefaultCityId
+                                                === (string) $city['id']
+                                        )
+                                    >
+                                        {{ $city['name'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            @error('location_city_id', 'updateProfile')
+                                <p class="field__error">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="field">
+                            <label
+                                class="field__label"
+                                for="profile-location-suburb"
+                            >
+                                Suburb / Area
+                            </label>
+
+                            <select
+                                id="profile-location-suburb"
+                                name="location_district_id"
+                                class="select"
+                            >
+                                <option value="">Select suburb / area</option>
+                            </select>
+
+                            @error('location_district_id', 'updateProfile')
+                                <p class="field__error">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <p class="field__hint">
+                        Only the suburb / area is used on listings — never your street address.
+                    </p>
+                </div>
+
                 <div class="field">
                     <label>
                         <input
@@ -167,4 +251,70 @@
         </section>
     </aside>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const city =
+        document.getElementById('profile-location-city');
+
+    const suburb =
+        document.getElementById('profile-location-suburb');
+
+    if (!city || !suburb) {
+        return;
+    }
+
+    const districts = @json($locationDistricts);
+
+    const initialDistrict =
+        @json((string) $selectedDefaultDistrictId);
+
+    const populateSuburbs = (preferred = '') => {
+        const cityId = String(city.value || '');
+
+        suburb.innerHTML = '';
+
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Select suburb / area';
+        suburb.appendChild(placeholder);
+
+        if (!cityId) {
+            suburb.disabled = true;
+            return;
+        }
+
+        districts
+            .filter(
+                district =>
+                    String(district.city_id) === cityId
+            )
+            .forEach(district => {
+                const option =
+                    document.createElement('option');
+
+                option.value = String(district.id);
+                option.textContent = district.name;
+
+                if (
+                    preferred
+                    && String(district.id)
+                        === String(preferred)
+                ) {
+                    option.selected = true;
+                }
+
+                suburb.appendChild(option);
+            });
+
+        suburb.disabled = false;
+    };
+
+    city.addEventListener('change', () => {
+        populateSuburbs('');
+    });
+
+    populateSuburbs(initialDistrict);
+});
+</script>
 @endsection

@@ -1456,7 +1456,13 @@ class PanelQuickListingForm extends Component
         $this->weight = (string) ($draft['weight'] ?? '');
         $this->weightUnit = (string) ($draft['weightUnit'] ?? 'kg');
         $this->description = (string) ($draft['description'] ?? '');
-        $this->selectedDistrictId = isset($draft['selectedDistrictId']) ? (int) $draft['selectedDistrictId'] : null;
+        if (
+            isset($draft['selectedDistrictId'])
+            && (int) $draft['selectedDistrictId'] > 0
+        ) {
+            $this->selectedDistrictId =
+                (int) $draft['selectedDistrictId'];
+        }
         $this->customFieldValues = is_array($draft['customFieldValues'] ?? null) ? $draft['customFieldValues'] : [];
 
         if ($this->selectedCategoryId) {
