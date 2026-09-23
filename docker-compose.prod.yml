@@ -82,7 +82,7 @@ services:
         VITE_REVERB_HOST: ${VITE_REVERB_HOST}
         VITE_REVERB_PORT: ${VITE_REVERB_PORT}
         VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME}
-    command: php -d memory_limit=768M artisan queue:work redis --sleep=2 --tries=3 --timeout=900
+    command: php -d memory_limit=768M artisan queue:work redis --queue=videos,default --sleep=2 --tries=3 --timeout=900
     environment:
       APP_ENV: production
       APP_DEBUG: "false"

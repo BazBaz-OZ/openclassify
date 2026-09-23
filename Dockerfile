@@ -6,6 +6,7 @@ RUN apk add --no-cache \
     npm \
     git \
     curl \
+    ffmpeg \
     zip \
     unzip \
     libpng-dev \
