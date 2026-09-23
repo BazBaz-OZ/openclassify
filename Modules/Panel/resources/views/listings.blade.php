@@ -48,16 +48,23 @@
             @foreach($listings as $listing)
                 @php $meta = $listing->panelStatusMeta(); @endphp
                 <article class="data-row">
-                    <div class="data-row__media">
+                    <a
+                        href="{{ route('listings.show', $listing) }}"
+                        class="data-row__media"
+                        aria-label="View {{ $listing->getAttribute('title') }}"
+                    >
                         @if($listing->panelPrimaryImageUrl())
                             <img src="{{ $listing->panelPrimaryImageUrl() }}" alt="" loading="lazy">
                         @else
                             <span class="listing-card__placeholder"><x-ui.icon name="image"/></span>
                         @endif
-                    </div>
+                    </a>
 
                     <div class="data-row__main">
-                        <p class="data-row__title text-clamp-1">{{ $listing->getAttribute('title') }}</p>
+                        <a
+                            href="{{ route('listings.show', $listing) }}"
+                            class="data-row__title text-clamp-1"
+                        >{{ $listing->getAttribute('title') }}</a>
                         <div class="data-row__meta">
                             <span class="text-price">{{ $listing->panelPriceLabel() }}</span>
                             <span class="badge">{{ $meta['label'] }}</span>
@@ -73,7 +80,7 @@
                     </div>
 
                     <div class="data-row__actions">
-                        <a href="{{ route('listings.show', $listing) }}" class="button button--ghost button--small">{{ __('panel::messages.view') }}</a>
+                        <a href="{{ route('listings.show', $listing) }}" class="button button--secondary button--small">{{ __('panel::messages.view') }}</a>
                         <a href="{{ route('panel.listings.edit', $listing) }}" class="button button--secondary button--small">{{ __('panel::messages.edit') }}</a>
 
                         @if($listing->statusValue() !== 'sold')
