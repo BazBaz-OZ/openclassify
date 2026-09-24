@@ -13,6 +13,8 @@ use Illuminate\Routing\Controller;
 use Modules\Listing\Models\Listing;
 use Modules\Notification\Models\UserNotification;
 use Modules\Offer\Models\Offer;
+use Modules\Offer\Notifications\OfferReceivedNotification;
+use Modules\User\App\Models\User;
 
 class OfferController extends Controller
 {
@@ -89,6 +91,19 @@ class OfferController extends Controller
             ]),
             route('panel.offers.index'),
         );
+
+        try {
+            $seller = User::query()->find($sellerId);
+
+            if ($seller !== null) {
+                $seller->notify(new OfferReceivedNotification(
+                    $offer->amountLabel(),
+                    (string) $listing->getAttribute('title'),
+                ));
+            }
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
 
         return back()->with('success', __('offer::messages.sent'));
     }
