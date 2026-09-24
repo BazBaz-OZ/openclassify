@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\View;
 use Modules\Category\Models\Category;
 use Modules\Location\Models\Country;
 use Modules\Location\Support\CountryCodeManager;
+use Modules\Offer\Models\Offer;
 use Modules\Site\App\Settings\GeneralSettings;
 use Modules\User\App\Models\User;
 use Throwable;
@@ -184,6 +185,10 @@ final class RequestAppData
             'messages' => max(0, (int) ($badgeCounts['messages'] ?? 0)),
             'notifications' => max(0, (int) ($badgeCounts['notifications'] ?? 0)),
             'favorites' => max(0, (int) ($badgeCounts['favorites'] ?? 0)),
+            'offers' => max(
+                0,
+                Offer::pendingCountForSeller((int) $user->getKey())
+            ),
         ];
     }
 

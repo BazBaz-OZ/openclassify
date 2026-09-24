@@ -8,6 +8,7 @@
     $messageCount = max(0, (int) ($account['messages'] ?? 0));
     $notificationCount = max(0, (int) ($account['notifications'] ?? 0));
     $favoriteCount = max(0, (int) ($account['favorites'] ?? 0));
+    $offerCount = max(0, (int) ($account['offers'] ?? 0));
     $badge = static fn (int $count): string => $count > 99 ? '99+' : (string) $count;
     $navCategories = collect($headerNavCategories ?? [])->values();
     $countries = collect($headerLocationCountries ?? [])->values();
@@ -271,7 +272,7 @@
                             data-favorite-header-count="{{ $favoriteCount }}"
                         >{{ $badge($favoriteCount) }}</span>
                     </a>
-                    <a href="{{ route('panel.notifications.index') }}" class="icon-button site-header__desktop-only" aria-label="{{ __('notification::messages.notifications') }}">
+                    <a href="{{ route('panel.notifications.index') }}" class="icon-button" aria-label="{{ __('notification::messages.notifications') }}">
                         <x-ui.icon name="bell"/>
                         @if($notificationCount > 0)<span class="icon-button__badge">{{ $badge($notificationCount) }}</span>@endif
                     </a>
@@ -368,9 +369,25 @@
                     @auth
                         <a href="{{ route('panel.index') }}" class="nav-list__item"><span>{{ __('site::messages.dashboard') }}</span><x-ui.icon name="chevron-right"/></a>
                         <a href="{{ route('panel.listings.index') }}" class="nav-list__item"><span>{{ __('site::messages.my_listings') }}</span><x-ui.icon name="chevron-right"/></a>
-                        <a href="{{ route('panel.offers.index') }}" class="nav-list__item"><span>{{ __('offer::messages.offers') }}</span><x-ui.icon name="chevron-right"/></a>
+                        <a href="{{ route('panel.offers.index') }}" class="nav-list__item">
+                            <span>
+                                {{ __('offer::messages.offers') }}
+                                @if($offerCount > 0)
+                                    <span class="badge badge--accent">{{ $badge($offerCount) }}</span>
+                                @endif
+                            </span>
+                            <x-ui.icon name="chevron-right"/>
+                        </a>
                         <a href="{{ route('favorites.index') }}" class="nav-list__item"><span>{{ __('site::messages.favorites') }}</span><x-ui.icon name="chevron-right"/></a>
-                        <a href="{{ route('panel.notifications.index') }}" class="nav-list__item"><span>{{ __('notification::messages.notifications') }}</span><x-ui.icon name="chevron-right"/></a>
+                        <a href="{{ route('panel.notifications.index') }}" class="nav-list__item">
+                            <span>
+                                {{ __('notification::messages.notifications') }}
+                                @if($notificationCount > 0)
+                                    <span class="badge badge--accent">{{ $badge($notificationCount) }}</span>
+                                @endif
+                            </span>
+                            <x-ui.icon name="chevron-right"/>
+                        </a>
                         <a href="{{ route('panel.profile.edit') }}" class="nav-list__item"><span>{{ __('site::messages.my_profile') }}</span><x-ui.icon name="chevron-right"/></a>
                     @else
                         <a href="{{ route('login') }}" class="nav-list__item"><span>{{ __('site::messages.login') }}</span><x-ui.icon name="chevron-right"/></a>
