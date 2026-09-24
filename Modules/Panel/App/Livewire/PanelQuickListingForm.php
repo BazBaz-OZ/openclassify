@@ -46,6 +46,8 @@ class PanelQuickListingForm extends Component
 
     public array $photos = [];
 
+    public $cameraPhoto = null;
+
     public array $videos = [];
 
     public array $categories = [];
@@ -185,6 +187,39 @@ class PanelQuickListingForm extends Component
         $this->detectedError = null;
         $this->detectedAlternatives = [];
         $this->activeParentCategoryId = null;
+    }
+
+    public function updatedCameraPhoto(): void
+    {
+        if ($this->cameraPhoto === null) {
+            return;
+        }
+
+        $this->validateOnly('cameraPhoto', [
+            'cameraPhoto' => [
+                'required',
+                'image',
+                'mimes:jpg,jpeg,png',
+                'max:'.config('quick-listing.max_photo_size_kb', 5120),
+            ],
+        ]);
+
+        if (count($this->photos) >= config('quick-listing.max_photo_count', 20)) {
+            $this->addError(
+                'cameraPhoto',
+                'You can upload a maximum of '.config('quick-listing.max_photo_count', 20).' photos.'
+            );
+
+            $this->reset('cameraPhoto');
+
+            return;
+        }
+
+        $this->photos[] = $this->cameraPhoto;
+        $this->reset('cameraPhoto');
+
+        // Reuse the normal photo validation and AI-category reset pipeline.
+        $this->updatedPhotos();
     }
 
     public function updatedVideos(): void

@@ -46,6 +46,10 @@
             <div class="alert alert--critical" role="alert"><x-ui.icon name="shield"/><span>{{ $message }}</span></div>
         @enderror
 
+        @error('cameraPhoto')
+            <div class="alert alert--critical" role="alert"><x-ui.icon name="shield"/><span>{{ $message }}</span></div>
+        @enderror
+
         @error('videos')
             <div class="alert alert--critical" role="alert"><x-ui.icon name="shield"/><span>{{ $message }}</span></div>
         @enderror
@@ -57,7 +61,27 @@
         <section class="card">
             <div class="card__body">
                 @if($currentStep === 1)
-                    <div class="upload">
+                    <div
+                        class="upload"
+                        data-upload-choice-guard
+                        style="pointer-events:none"
+                    >
+                        <label class="upload__control" for="quick-camera-photo">
+                            <x-ui.icon name="image"/>
+                            <span class="title-card">Take Photo</span>
+                            <span class="text-muted">Use your phone camera</span>
+                            <input
+                                id="quick-camera-photo"
+                                type="file"
+                                class="visually-hidden"
+                                wire:model="cameraPhoto"
+                                accept="image/*"
+                                capture="environment"
+                            >
+                        </label>
+
+                        <div wire:loading wire:target="cameraPhoto" class="text-muted">{{ __('panel::messages.uploading') }}</div>
+
                         <label class="upload__control" for="quick-photos">
                             <x-ui.icon name="image"/>
                             <span class="title-card">{{ __('panel::messages.photos') }}</span>
@@ -650,3 +674,23 @@
         </section>
     </div>
 </div>
+
+<script>
+(() => {
+    const enableUploadChoices = () => {
+        document.querySelectorAll('[data-upload-choice-guard]').forEach((element) => {
+            window.setTimeout(() => {
+                element.style.pointerEvents = '';
+            }, 650);
+        });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', enableUploadChoices, { once: true });
+    } else {
+        enableUploadChoices();
+    }
+
+    document.addEventListener('livewire:navigated', enableUploadChoices);
+})();
+</script>
