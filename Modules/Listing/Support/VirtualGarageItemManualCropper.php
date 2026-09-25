@@ -820,10 +820,18 @@ class VirtualGarageItemManualCropper
                     'manual_crop_file'
                 ] ?? null;
 
-            $disk->put(
-                $path,
-                $webp
-            );
+            $written =
+                $disk->put(
+                    $path,
+                    $webp
+                );
+
+            if (
+                ! $written
+                || ! $disk->exists($path)
+            ) {
+                return null;
+            }
 
             if (
                 is_array($oldFile)

@@ -4,21 +4,15 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "957af3550389c022ec58d70f639e7b61",
+    "content-hash": "dc184fe385f3381253130470055c8e27",
     "packages": [
         {
             "name": "a909m/filament-statefusion",
-            "version": "v2.3.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/A909M/Filament-StateFusion.git",
-                "reference": "ad8904426012c51255670bcd30520ca031bb71a8"
-            },
+            "version": "2.3.0",
             "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/A909M/Filament-StateFusion/zipball/ad8904426012c51255670bcd30520ca031bb71a8",
-                "reference": "ad8904426012c51255670bcd30520ca031bb71a8",
-                "shasum": ""
+                "type": "path",
+                "url": "packages/filament-statefusion",
+                "reference": "ad8904426012c51255670bcd30520ca031bb71a8"
             },
             "require": {
                 "filament/filament": "^4.0|^5.0",
@@ -38,12 +32,12 @@
             "type": "library",
             "extra": {
                 "laravel": {
-                    "aliases": {
-                        "FilamentStateFusion": "A909M\\FilamentStateFusion\\Facades\\FilamentStateFusion"
-                    },
                     "providers": [
                         "A909M\\FilamentStateFusion\\FilamentStateFusionServiceProvider"
-                    ]
+                    ],
+                    "aliases": {
+                        "FilamentStateFusion": "A909M\\FilamentStateFusion\\Facades\\FilamentStateFusion"
+                    }
                 }
             },
             "autoload": {
@@ -52,7 +46,28 @@
                     "A909M\\FilamentStateFusion\\Database\\Factories\\": "database/factories/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "A909M\\FilamentStateFusion\\Tests\\": "tests/"
+                }
+            },
+            "scripts": {
+                "post-autoload-dump": [
+                    "@php ./vendor/bin/testbench package:discover --ansi"
+                ],
+                "analyse": [
+                    "vendor/bin/phpstan analyse"
+                ],
+                "test": [
+                    "vendor/bin/pest"
+                ],
+                "test-coverage": [
+                    "vendor/bin/pest --coverage"
+                ],
+                "format": [
+                    "vendor/bin/pint"
+                ]
+            },
             "license": [
                 "MIT"
             ],
@@ -86,13 +101,10 @@
                 "issues": "https://github.com/a909m/filament-statefusion/issues",
                 "source": "https://github.com/a909m/filament-statefusion"
             },
-            "funding": [
-                {
-                    "url": "https://github.com/A909M",
-                    "type": "github"
-                }
-            ],
-            "time": "2026-01-16T21:21:14+00:00"
+            "transport-options": {
+                "symlink": false,
+                "relative": true
+            }
         },
         {
             "name": "akaunting/laravel-money",

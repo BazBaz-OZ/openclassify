@@ -29,6 +29,7 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 COPY composer.json composer.lock* ./
+COPY packages/filament-statefusion ./packages/filament-statefusion
 RUN git config --global http.version HTTP/1.1 \
     && composer install --no-dev --no-scripts --no-autoloader --prefer-source --no-interaction --no-progress
 

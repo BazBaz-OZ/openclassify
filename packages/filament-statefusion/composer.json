@@ -1,0 +1,86 @@
+{
+    "name": "a909m/filament-statefusion",
+    "description": "Filament StateFusion is a powerful FilamentPHP plugin that seamlessly integrates Spatie Laravel Model States into the Filament admin panel. This package provides an intuitive way to manage model states, transitions, and filtering within Filament, enhancing the user experience and developer productivity.",
+    "keywords": [
+        "A909M",
+        "laravel",
+        "filament-statefusion",
+        "filament",
+        "filamentphp",
+        "filament-plugin",
+        "spatie",
+        "state-machine",
+        "admin-panel",
+        "filament-admin",
+        "filament-table",
+        "filament-form",
+        "filament-infolist",
+        "state-management",
+        "stae-p"
+    ],
+    "homepage": "https://github.com/a909m/filament-statefusion",
+    "support": {
+        "issues": "https://github.com/a909m/filament-statefusion/issues",
+        "source": "https://github.com/a909m/filament-statefusion"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "A909M",
+            "email": "assemcc2022@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "filament/filament": "^4.0|^5.0",
+        "spatie/laravel-model-states": "^2.10",
+        "spatie/laravel-package-tools": "^1.15.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.24",
+        "nunomaduro/collision": "^8.8",
+        "nunomaduro/larastan": "^3.7",
+        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "pestphp/pest": "^4.1",
+        "pestphp/pest-plugin-arch": "^4.0",
+        "phpstan/extension-installer": "^1.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "A909M\\FilamentStateFusion\\": "src/",
+            "A909M\\FilamentStateFusion\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "A909M\\FilamentStateFusion\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": "@php ./vendor/bin/testbench package:discover --ansi",
+        "analyse": "vendor/bin/phpstan analyse",
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "format": "vendor/bin/pint"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "phpstan/extension-installer": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "A909M\\FilamentStateFusion\\FilamentStateFusionServiceProvider"
+            ],
+            "aliases": {
+                "FilamentStateFusion": "A909M\\FilamentStateFusion\\Facades\\FilamentStateFusion"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
